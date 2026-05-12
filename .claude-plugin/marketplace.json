@@ -3,7 +3,7 @@
   "description": "Fused plugins for Claude Code.",
   "owner": {
     "name": "Fused",
-    "email": "isaac@fused.io",
+    "email": "info@fused.io",
     "url": "https://fused.io"
   },
   "plugins": [
@@ -14,7 +14,7 @@
       "version": "0.1.0",
       "author": {
         "name": "Fused",
-        "email": "isaac@fused.io",
+        "email": "info@fused.io",
         "url": "https://fused.io"
       },
       "homepage": "https://fused.io",
