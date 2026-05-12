@@ -1,0 +1,13 @@
+{
+  "name": "fused",
+  "version": "0.1.0",
+  "description": "Skills for authoring Fused canvases: canvas.toml format, JSON UI widget schemas, and the fused CLI.",
+  "author": {
+    "name": "Fused",
+    "email": "isaac@fused.io",
+    "url": "https://fused.io"
+  },
+  "homepage": "https://fused.io",
+  "license": "Proprietary",
+  "keywords": ["fused", "canvas", "udf", "python", "data", "skills"]
+}
