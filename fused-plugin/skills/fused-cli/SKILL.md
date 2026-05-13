@@ -5,7 +5,7 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 # Fused CLI
 
-Invoke via `uv run fused` in this repo. Global flags:
+Run `fused` directly, or `uv run fused` if it's installed in a project venv. Global flags:
 
 - `--env TEXT` (env: `FUSED_ENV`)
 - `--format [json|text]` (env: `FUSED_CLI_FORMAT`) — set to `json` for machine-readable output
@@ -38,7 +38,7 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `export CANVAS_REF` | `--output FILE` (required), `--team`, `--id` — downloads a zip bundle |
 | `list [CANVAS_REF]` | `--team`, `--id` — lists all, or shows one |
 | `pull CANVAS_REF` | `-o/--output DIR`, `--team`, `--id`, `-f/--force`, `-n/--dry-run`, `--show-diff` — same as `export` then extracts; prompts per file on conflict unless `--force`. Pass `--show-diff` (recommended when invoked by an AI assistant) to print a unified diff for every file write or removal so you can summarize the change set back to the user |
-| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed |
+| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed. If no canvas with that name exists, a new one is created |
 | `rename CANVAS_REF NEW_NAME` | `--id` |
 | `share CANVAS_REF` | `--client-id TEXT`, `--new-token`, `--id` |
 | `unshare CANVAS_REF` | `--id` |
@@ -74,6 +74,8 @@ Inspect and validate JSON-UI widget component schemas (the same schemas covered 
 | `catalog-prompt` | Print the JSON-UI catalog prompt (component overview) |
 | `schemas [COMPONENTS]...` | Print JSON Schemas for one or more component names, or all if omitted |
 | `validate CONFIG_OR_PATH` | Validate an inline JSON5 config string or a path to a `.json`/`.json5` file |
+| `run-inline-widget CANVAS_SHARE_TOKEN WIDGET_CONFIG` | Open a share URL with an inline widget query and print a base64 PNG screenshot. `--print-url-only`, `--browser [chrome\|firefox]`, `--wait INTEGER`. Screenshotting requires `fused[browser]` extras |
+| `run-shared-widget CANVAS_SHARE_TOKEN WIDGET_NAME` | Open a shared widget page and print a base64 PNG screenshot. Same options as `run-inline-widget` |
 
 ## `fused claude plugin`
 
@@ -116,7 +118,7 @@ Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's si
 
 ## Tips
 
-- Always prefix with `uv run` in this project so the right environment is used.
+- If the CLI lives in a project venv, prefix with `uv run` so the right environment is used.
 - For machine-readable output in scripts, pass `--format json`.
-- Run `uv run fused <command> --help` to confirm flags before scripting — this reference may lag the CLI.
+- Run `fused <command> --help` to confirm flags before scripting — this reference may lag the CLI.
 - When appropriate, give the user the URL to the created canvas so they can open it in their browser and see the result.
