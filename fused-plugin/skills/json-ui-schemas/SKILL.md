@@ -32,3 +32,14 @@ The full JSON Schema for each component (with descriptions, defaults, required f
 2. Honor `required` props and respect `enum` constraints.
 3. When constructing a widget JSON, prefer SQL-driven options/data over static when a UDF is available.
 4. Validate output against the schema's `additionalProperties: false` — unknown keys will be rejected.
+
+## Debugging widgets with the Fused CLI
+
+The `fused json-ui` subcommands are the fastest way to check your work without round-tripping through the canvas UI. See the `fused:fused-cli` skill for full flag details; the common debugging flow is:
+
+- **Verify the schema you're targeting** — `fused json-ui schemas <type>` prints the live JSON Schema for one or more component types (or all of them if omitted). Use this when `reference.md` and the CLI disagree; the CLI is authoritative.
+- **Validate a widget JSON before pushing** — `fused json-ui validate path/to/widget_foo.json` (or a path to a `.json5` file, or an inline JSON5 string). Run this after every non-trivial edit; it catches missing required props, unknown keys, and bad enum values without needing a canvas push.
+- **See a widget rendered without opening a browser tab** — once the canvas is shared (`fused canvas share <ref>`), use `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` to render the widget headlessly and save a PNG. Add `--wait N` if the widget loads data asynchronously. `run-inline-widget` does the same for an inline JSON5 config string, which is useful for iterating on a widget that isn't committed yet.
+- **Refresh the catalog** — `fused json-ui catalog-prompt` prints the high-level component catalog; handy when a new widget type appears in the CLI before it lands in `reference.md`.
+
+Recommended loop when authoring a new widget JSON: write → `fused json-ui validate <file>` → fix → push → `fused json-ui run-shared-widget` to confirm it renders.
