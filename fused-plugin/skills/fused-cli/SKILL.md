@@ -15,8 +15,10 @@ Invoke via `uv run fused` in this repo. Global flags:
 | Command      | Purpose |
 | ---          | --- |
 | `canvas`     | Manage canvases |
+| `claude`     | Manage the Fused plugin for Claude Code |
 | `completion` | Print or install shell tab completion |
 | `files`      | Manage files stored in Fused |
+| `json-ui`    | Inspect JSON-UI component schemas |
 | `login`      | Authenticate and persist credentials |
 | `logout`     | Clear local credentials |
 | `run`        | Run a UDF and print the result |
@@ -35,7 +37,7 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `delete CANVAS_REF` | `--id` |
 | `export CANVAS_REF` | `--output FILE` (required), `--team`, `--id` — downloads a zip bundle |
 | `list [CANVAS_REF]` | `--team`, `--id` — lists all, or shows one |
-| `pull CANVAS_REF` | `-o/--output DIR`, `--team`, `--id`, `-f/--force`, `-n/--dry-run` — same as `export` then extracts; prompts per file on conflict unless `--force` |
+| `pull CANVAS_REF` | `-o/--output DIR`, `--team`, `--id`, `-f/--force`, `-n/--dry-run`, `--show-diff` — same as `export` then extracts; prompts per file on conflict unless `--force`. Pass `--show-diff` (recommended when invoked by an AI assistant) to print a unified diff for every file write or removal so you can summarize the change set back to the user |
 | `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed |
 | `rename CANVAS_REF NEW_NAME` | `--id` |
 | `share CANVAS_REF` | `--client-id TEXT`, `--new-token`, `--id` |
@@ -62,6 +64,33 @@ User secrets are read-only — `--user` is only valid on `get` and `list`.
 | `get KEY` | `--user`, `--client-id TEXT` |
 | `list` | `--user`, `--client-id TEXT` |
 | `set KEY VALUE` | `--client-id TEXT` |
+
+## `fused json-ui`
+
+Inspect and validate JSON-UI widget component schemas (the same schemas covered by the `fused:json-ui-schemas` skill). Useful when authoring or editing `widget_*.json` files.
+
+| Subcommand | Args / notable options |
+| --- | --- |
+| `catalog-prompt` | Print the JSON-UI catalog prompt (component overview) |
+| `schemas [COMPONENTS]...` | Print JSON Schemas for one or more component names, or all if omitted |
+| `validate CONFIG_OR_PATH` | Validate an inline JSON5 config string or a path to a `.json`/`.json5` file |
+
+## `fused claude plugin`
+
+Manage the Fused plugin for Claude Code (this plugin) via the `claude` CLI.
+
+| Subcommand | Purpose |
+| --- | --- |
+| `add` | Register the marketplace and install `fused@fused-marketplace` |
+| `update` | Update `fused@fused-marketplace` to the latest version |
+| `remove` | Remove the fused plugin |
+
+## `fused completion`
+
+| Subcommand | Args / notable options |
+| --- | --- |
+| `install` | `--shell [auto\|bash\|zsh\|fish]`, `--dry-run`, `-y/--yes` — append a one-liner to `~/.bashrc`/`~/.zshrc` or write fish's completion file |
+| `print {bash\|zsh\|fish}` | Print a completion script suitable for `eval` or fish's completions dir |
 
 ## `fused run CANVAS UDF`
 
