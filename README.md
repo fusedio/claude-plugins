@@ -1,5 +1,6 @@
-# claude-plugins
-Fused plugins for Claude
+# Fused Skills
+
+Fused skills and plugins for AI
 
 To install `fused`:
 
@@ -9,13 +10,15 @@ uv add fused
 pip install fused
 ```
 
-Then install this plugin:
+Then install this as a Claude plugin:
 
 ```sh
 fused claude plugin add
 ```
 
 ## Manual installation
+
+### Claude Code
 
 To install the `fused` plugin:
 
