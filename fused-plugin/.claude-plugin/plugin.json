@@ -1,6 +1,6 @@
 {
   "name": "fused",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Skills for authoring Fused canvases: canvas.toml format, JSON UI widget schemas, and the fused CLI.",
   "author": {
     "name": "Fused",
