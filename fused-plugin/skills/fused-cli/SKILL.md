@@ -24,6 +24,7 @@ Run `fused` directly, or `uv run fused` if it's installed in a project venv. Glo
 | `logout`       | Clear local credentials |
 | `run`          | Run a UDF and print the result |
 | `secrets`      | Manage kernel and user secrets |
+| `udf-schema`   | Print the API schema for a UDF |
 | `whoami`       | Show info about the authenticated user (`--team` for the team) |
 
 ## `fused canvas`
@@ -133,6 +134,21 @@ Options:
 - `--verbose / --no-verbose` — show UDF stdout/stderr (default on)
 
 Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's signature**, e.g. `--abc=123` is forwarded as the `abc` parameter to the UDF. These pass-through args are not listed in `--help`.
+
+## `fused udf-schema CANVAS UDF`
+
+Prints a UDF's API schema (parameter types, return shape) without executing it. The `UDF` argument is passed to `fused.load` and accepts the same forms as `fused run`:
+
+- Fused identifier: `user@example.com/my_udf` or `my_udf` (resolved against `CANVAS` as the collection)
+- Local Python file: `udf.py` or any `.py` path
+- GitHub tree/blob URL
+- Inline UDF source (a string containing at least one newline is treated as Python module text)
+
+Options:
+
+- `--stdin` — read UDF source from stdin instead of passing `UDF` (do not pass `UDF` with `--stdin`)
+
+Use this to introspect parameters before calling `fused run` with `--<param>=<value>` kwargs, or to confirm a UDF's signature matches what a widget or downstream UDF expects.
 
 ## Tips
 
