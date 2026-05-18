@@ -46,6 +46,8 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `unshare CANVAS_REF` | `--id` |
 | `serve-mcp CANVAS_REF` | `--token` (treat ref as `fc_…` share token), `--team`, `--id`, `--host TEXT` (default `127.0.0.1`), `--port INTEGER` (default `8765`), `--path TEXT` (default `/mcp`), `--claude` (register with Claude Code via `claude` CLI) — serves the shared canvas's OpenAPI as a local MCP server. The canvas must be shared first (`fused canvas share <ref>`) |
 
+- When pushing a canvas, prefer to test the canvas to make sure your changes work. For JSON UI nodes, you can run using `fused json-ui run-inline-widget`/`fused json-ui run-shared-widget`, for UDFs, you can run them using `fused run`.
+
 ## `fused files`
 
 | Subcommand | Args / notable options |
