@@ -11,7 +11,7 @@
       "name": "fused",
       "source": "./fused-plugin",
       "description": "Skills for authoring Fused canvases: canvas.toml format, JSON UI widget schemas, and the fused CLI.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": {
         "name": "Fused",
         "email": "info@fused.io",
