@@ -44,7 +44,7 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `rename CANVAS_REF NEW_NAME` | `--id` |
 | `share CANVAS_REF` | `--client-id TEXT`, `--new-token`, `--id` |
 | `unshare CANVAS_REF` | `--id` |
-| `mcp CANVAS_REF` | `--token` (treat ref as `fc_…` share token), `--team`, `--id`, `--host TEXT` (default `127.0.0.1`), `--port INTEGER` (default `8765`), `--path TEXT` (default `/mcp`) — serves the shared canvas's OpenAPI as a local MCP server. The canvas must be shared first (`fused canvas share <ref>`) |
+| `serve-mcp CANVAS_REF` | `--token` (treat ref as `fc_…` share token), `--team`, `--id`, `--host TEXT` (default `127.0.0.1`), `--port INTEGER` (default `8765`), `--path TEXT` (default `/mcp`), `--claude` (register with Claude Code via `claude` CLI) — serves the shared canvas's OpenAPI as a local MCP server. The canvas must be shared first (`fused canvas share <ref>`) |
 
 ## `fused files`
 
@@ -96,15 +96,16 @@ Inspect, validate, and render JSON-UI widget component schemas (the same schemas
 
 **Debugging flow:** edit the widget JSON → `fused json-ui validate <file>` → push → `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` to confirm it renders. Use `run-inline-widget` when iterating on a widget that hasn't been committed yet.
 
-## `fused claude plugin`
+## `fused claude`
 
-Manage the Fused plugin for Claude Code (this plugin) via the `claude` CLI.
+Manage Fused for Claude Code via the `claude` CLI.
 
 | Subcommand | Purpose |
 | --- | --- |
-| `add` | Register the marketplace and install `fused@fused-marketplace` |
-| `update` | Update `fused@fused-marketplace` to the latest version |
-| `remove` | Remove the fused plugin |
+| `plugin add` | Register the marketplace and install `fused@fused-marketplace` |
+| `plugin update` | Update `fused@fused-marketplace` to the latest version |
+| `plugin remove` | Remove the fused plugin |
+| `add-mcp CANVAS_REF` | Register the hosted canvas MCP endpoint with Claude Code (same as Workbench "Copy MCP"). Options: `--token`, `--team`, `--id`, `--create-session-token/--no-create-session-token` (default: on), `--session-max-age TEXT` (default `1h`) |
 
 ## `fused completion`
 

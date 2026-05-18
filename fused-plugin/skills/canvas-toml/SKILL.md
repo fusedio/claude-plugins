@@ -21,6 +21,8 @@ my_canvas/
 ```
 
 - `<name>.py` / `.json` / `.md` / `.html` — source for a UDF; the **stem must match a node's `udfName`**.
+-- File name stems must be unique in a canvas. The following is OK: `abc.json`, `def.py`. The following will NOT work: `abc.json`, `abc.py`
+-- JSON-UI files you should consult the `json-ui-schemas` skill for how to write, validate, and debug them. They contain JSON5.
 - `_shared.fused` — omit ⇒ private (author only). Empty file ⇒ team. Set `access_scope = "public"` for public. Set `token = "<value>"` to control the URL slug.
 
 Do **not** mix `canvas.toml` with the legacy `collection.json` layout in one folder — `canvas.toml` wins if both are present.

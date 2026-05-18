@@ -7,7 +7,11 @@ description: JSON schemas for Fused canvas UI widget components (text, input, bu
 
 Reference for every supported widget `type` and its prop schema.
 
-The full JSON Schema for each component (with descriptions, defaults, required fields, and enum values) lives in `reference.md` next to this file. Read it before authoring or modifying widget JSON.
+The full JSON Schema for each component (with descriptions, defaults, required fields, and enum values) is available from the fused CLI. See the `fused-cli` skill for how to rread it. Read it before authoring or modifying widget JSON.
+
+The authoritative reference to JSON schema is available from the CLI. There is also a reference in `reference.md`, but it is an offline copy that may be out of date.
+
+JSON UI files are in JSON5 format, which may have trailing commas, comments, etc.
 
 ## Available widget types
 
