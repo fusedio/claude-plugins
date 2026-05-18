@@ -46,4 +46,11 @@ The `fused json-ui` subcommands are the fastest way to check your work without r
 - **See a widget rendered without opening a browser tab** — once the canvas is shared (`fused canvas share <ref>`), use `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` to render the widget headlessly and save a PNG. Add `--wait N` if the widget loads data asynchronously. `run-inline-widget` does the same for an inline JSON5 config string, which is useful for iterating on a widget that isn't committed yet.
 - **Refresh the catalog** — `fused json-ui catalog-prompt` prints the high-level component catalog; handy when a new widget type appears in the CLI before it lands in `reference.md`.
 
-Recommended loop when authoring a new widget JSON: write → `fused json-ui validate <file>` → fix → push → `fused json-ui run-shared-widget` to confirm it renders.
+Recommended loop when authoring a new widget JSON: write → `fused json-ui validate <file>` → fix → push → confirm it renders.
+
+**Always verify the widget renders correctly** before reporting the task complete. Use one of these methods:
+
+- **CLI (preferred for quick iteration):** `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` — renders headlessly and saves a PNG. Review the PNG to confirm layout, labels, and data look correct.
+- **Browser:** open the canvas URL and interact with the widget directly. This is required when testing interactivity (dropdowns, form submission, map panning, etc.) that a screenshot cannot capture.
+
+Do not claim success after `validate` alone — validation only checks schema conformance, not runtime behavior or visual correctness.
