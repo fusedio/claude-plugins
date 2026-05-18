@@ -1,13 +1,13 @@
 ---
 name: json-ui-schemas
-description: JSON schemas for Fused canvas UI widget components (text, input, button, dropdown, charts, maps, sql-table, form, transformer, etc.). Use when authoring or editing widget JSON files (e.g. `widget_*.json` in canvas directories), validating widget props, or answering questions about which fields a given widget type accepts.
+description: JSON schemas for Fused canvas UI widget components (text, text-input, button, dropdown, charts, maps, sql-table, form, transformer, etc.). Use when authoring or editing widget JSON files (e.g. `widget_*.json` in canvas directories), validating widget props, or answering questions about which fields a given widget type accepts.
 ---
 
 # Fused JSON UI widget schemas
 
 Reference for every supported widget `type` and its prop schema.
 
-The full JSON Schema for each component (with descriptions, defaults, required fields, and enum values) is available from the fused CLI. See the `fused-cli` skill for how to rread it. Read it before authoring or modifying widget JSON.
+The full JSON Schema for each component (with descriptions, defaults, required fields, and enum values) is available from the fused CLI. See the `fused-cli` skill for how to read it. Read it before authoring or modifying widget JSON.
 
 The authoritative reference to JSON schema is available from the CLI. There is also a reference in `reference.md`, but it is an offline copy that may be out of date.
 
@@ -16,8 +16,8 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 ## Available widget types
 
 - **Layout / containers:** `div`, `form`, `sql-runner` (children: yes)
-- **Inputs:** `input`, `dropdown`, `slider`, `button`, `code-editor`
-- **Display:** `text`, `image`, `big-number`, `iframe`
+- **Inputs:** `text-input`, `text-area`, `number-input`, `datetime-input`, `camera-input`, `color-input`, `dropdown`, `slider`, `button`, `code-editor`, `gallery-input`
+- **Display:** `text`, `image`, `metric`, `iframe`, `html`
 - **Charts:** `bar-chart`, `line-chart`, `stacked-bar-chart`, `stacked-area-chart`, `scatter-chart`, `donut-chart`, `heatmap-chart`
 - **Tables:** `sql-table`
 - **Maps:** `map`, `map-bounds`, `map-h3`, `fused-map`
@@ -35,7 +35,7 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 1. Open `reference.md` and find the section for the widget `type` you're working with.
 2. Honor `required` props and respect `enum` constraints.
 3. When constructing a widget JSON, prefer SQL-driven options/data over static when a UDF is available.
-4. Validate output against the schema's `additionalProperties: false` — unknown keys will be rejected.
+4. Validate with `fused json-ui validate <file>` — unknown keys and missing required props will be flagged.
 
 ## Debugging widgets with the Fused CLI
 
