@@ -77,8 +77,12 @@ Use `data_uri` in the widget as `<img src>`, `<video src>`, or `<embed src>`. Fo
 
 ```python
 @fused.udf
-def udf(url: str = "https://example.com/data.csv", folder_id: str = "root"):
+def udf():
     import urllib.request, requests
+
+    url = "https://example.com/data.csv"
+    folder_id = "root"
+
     file_name = url.split("?")[0].rstrip("/").split("/")[-1] or "upload.csv"
     with urllib.request.urlopen(url) as resp:
         data = resp.read()
