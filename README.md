@@ -5,9 +5,13 @@ Fused skills and plugins for AI
 To install `fused`:
 
 ```sh
-uv add fused
-# or
-pip install fused
+pip install --upgrade fused
+```
+
+To run standalone using `uv`, add `uvx` before `fused` like so:
+
+```sh
+uvx fused
 ```
 
 Then install this as a Claude plugin:

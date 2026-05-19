@@ -10,9 +10,10 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 `fused` is installed as part of the `fused` Python package. If it is not on `PATH`, locate or install it before running any commands:
 
 1. **Check PATH first:** `which fused` — if found, use it directly.
-2. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`.
-3. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path.
-4. **Fresh install (recommended when nothing else works):**
+2. **No virtual environment detected? Use uvx (recommended):** `uvx fused` — runs the latest version without installation.
+3. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`.
+4. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path.
+5. **Fresh install (when uvx isn't available):**
    ```bash
    uv venv ~/.fused-cli-env
    uv pip install fused --python ~/.fused-cli-env/bin/python
