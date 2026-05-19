@@ -138,9 +138,9 @@ height = 700
 - When removing a UDF: delete its source file(s) **and** its node entry, plus any `edges` referencing it.
 - UDFs can call each other via `fused.load("<udfName>")`. For multiprocessing, split into a new UDF.
 
-## Canvas parameters vs edges
+## Edges and canvas parameters
 
-`edges` wire UDF **data output** from one node into another as input. They are not needed for canvas **parameters** — values broadcast by input widgets (e.g. a text-input synced to `"my_param"`) are available canvas-wide to any node that references `$my_param`. A canvas with only an inputs node and a display node typically has `edges = []`.
+`edges` wire nodes together — both for UDF data flow and to enable canvas **parameter** propagation. Even when nodes communicate via `$param_name` substitution rather than direct data output, an edge from the source node to the display node is still required for the display to receive and react to parameter changes. Always add an edge between an inputs widget node and any display node it drives.
 
 ## Node sizing and viewport
 
