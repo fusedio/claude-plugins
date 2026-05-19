@@ -1,13 +1,111 @@
 ---
 name: fused-integrations
-description: Reference for using Fused's built-in integration connections inside UDFs. Covers Snowflake, BigQuery, GCS, S3, Airtable, and Notion — the fused.api connect helpers, secrets access, and common operations (query, write, list). Use when the user is writing a UDF that reads from or writes to a connected data source.
+description: Reference for using Fused's built-in integration connections inside UDFs. Covers Snowflake, BigQuery, GCS, S3, Airtable, Notion, and Google Drive — the fused.api connect helpers, secrets access, and common operations (query, write, list). Use when the user is writing a UDF that reads from or writes to a connected data source.
 ---
 
 # Fused Integrations
 
 Once an integration is configured (via the Workbench → Integrations UI or `fused integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
 
-Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `slack` (experimental).
+Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `slack` (experimental).
+
+---
+
+## Google Drive
+
+Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.
+
+### gdrive:// path format
+
+```
+gdrive://<folder_id>/<folder_name>/   # list a folder
+gdrive://<file_id>/<filename>         # read a specific file
+gdrive://root/                        # all Picker-granted files at root
+```
+
+### List files
+
+```python
+@fused.udf
+def udf():
+    return fused.api.list("gdrive://root/")
+```
+
+### Read tabular files (CSV, Excel)
+
+```python
+@fused.udf
+def udf():
+    import pandas as pd
+    return pd.read_csv("gdrive://<file_id>/<name>.csv")
+```
+
+```python
+@fused.udf
+def udf():
+    import pandas as pd
+    return pd.read_excel("gdrive://<file_id>/<name>.xlsx")
+```
+
+Google-native formats are auto-exported: Sheets → `.xlsx`, Docs → `.docx`, Slides → `.pptx`, Drawings → `.png`.
+
+### Read binary files
+
+```python
+@fused.udf
+def udf():
+    import io
+    data = fused.api.get("gdrive://<file_id>/<name>.png")
+    # wrap in io.BytesIO for libraries that need a file-like object
+```
+
+### Get a browser-accessible URL
+
+`fused files sign_url` does not support `gdrive://`. Stage through `fd://` first:
+
+```python
+@fused.udf
+def udf():
+    data = fused.api.get("gdrive://<file_id>/<name>.jpg")
+    fd_path = "fd://my-cache/<name>.jpg"
+    fused.api.upload(data, fd_path)
+    url = fused.api.sign_url(fd_path)
+```
+
+### Upload a file to Google Drive from a URL
+
+```python
+@fused.udf
+def udf(url: str = "https://example.com/data.csv", folder_id: str = "root"):
+    import urllib.request, requests
+    file_name = url.split("?")[0].rstrip("/").split("/")[-1] or "upload.csv"
+    with urllib.request.urlopen(url) as resp:
+        data = resp.read()
+    api = fused.api.api
+    creds = api.AUTHORIZATION.credentials
+    r = requests.put(
+        f"{api.OPTIONS.base_url}/files/upload",
+        params={"path": f"gdrive://{folder_id}/{file_name}"},
+        data=data,
+        headers={
+            "Authorization": f"Bearer {creds.access_token}",
+            "Content-Type": "application/octet-stream",
+        },
+    )
+    r.raise_for_status()
+```
+
+A 401 response means credentials belong to a different user — make a copy of the canvas.
+
+### Parse fused.api.list() results
+
+```python
+items = fused.api.list("gdrive://root/")
+for item in items:
+    stripped = item.replace("gdrive://", "").rstrip("/")
+    item_id, item_name = stripped.split("/", 1)
+    is_dir = item.endswith("/")
+```
 
 ---
 
