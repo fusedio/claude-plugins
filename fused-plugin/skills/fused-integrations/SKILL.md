@@ -49,28 +49,29 @@ def udf():
 
 Google-native formats are auto-exported: Sheets → `.xlsx`, Docs → `.docx`, Slides → `.pptx`, Drawings → `.png`.
 
-### Read binary files
+### Read binary files / return to frontend
+
+Base64-encode the raw bytes and return a data URI in the DataFrame — no `fd://` write needed:
 
 ```python
-@fused.udf
-def udf():
-    import io
-    data = fused.api.get("gdrive://<file_id>/<name>.png")
-    # wrap in io.BytesIO for libraries that need a file-like object
+import base64, mimetypes, io, pandas as pd
+
+data = fused.api.get(gdrive_path)   # e.g. "gdrive://<id>/<name>.jpg"
+file_name = gdrive_path.split("/")[-1]
+
+# Tabular — return DataFrame directly
+if file_name.endswith(".csv"):
+    return pd.read_csv(io.BytesIO(data))
+if file_name.endswith((".xlsx", ".xls")):
+    return pd.read_excel(io.BytesIO(data))
+
+# Binary — return as data URI
+mime, _ = mimetypes.guess_type(file_name)
+data_uri = f"data:{mime or 'application/octet-stream'};base64,{base64.b64encode(data).decode()}"
+return pd.DataFrame([{"file": file_name, "size_kb": round(len(data)/1024, 1), "data_uri": data_uri}])
 ```
 
-### Get a browser-accessible URL
-
-`fused files sign_url` does not support `gdrive://`. Stage through `fd://` first:
-
-```python
-@fused.udf
-def udf():
-    data = fused.api.get("gdrive://<file_id>/<name>.jpg")
-    fd_path = "fd://my-cache/<name>.jpg"
-    fused.api.upload(data, fd_path)
-    url = fused.api.sign_url(fd_path)
-```
+Use `data_uri` in the widget as `<img src>`, `<video src>`, or `<embed src>`. For very large files fall back to `fd://` staging + `fused.api.sign_url()`.
 
 ### Upload a file to Google Drive from a URL
 
