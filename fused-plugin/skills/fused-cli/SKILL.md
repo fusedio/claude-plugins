@@ -5,7 +5,24 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 # Fused CLI
 
-Run `fused` directly, or `uv run fused` if it's installed in a project venv. Global flags:
+## Finding the CLI
+
+`fused` is installed as part of the `fused` Python package. If it is not on `PATH`, locate or install it before running any commands:
+
+1. **Check PATH first:** `which fused` — if found, use it directly.
+2. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`.
+3. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path.
+4. **Fresh install (recommended when nothing else works):**
+   ```bash
+   uv venv ~/.fused-cli-env
+   uv pip install fused --python ~/.fused-cli-env/bin/python
+   # then call ~/.fused-cli-env/bin/fused
+   ```
+   Save the full path for future use so the same env is reused.
+
+Always confirm the CLI is working with `fused whoami` before proceeding.
+
+## Global flags
 
 - `--env TEXT` (env: `FUSED_ENV`)
 - `--format [json|text]` (env: `FUSED_CLI_FORMAT`) — set to `json` for machine-readable output
@@ -40,7 +57,7 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `export CANVAS_REF` | `--output FILE` (required), `--team`, `--id` — downloads a zip bundle |
 | `list [CANVAS_REF]` | `--team`, `--id` — lists all, or shows one |
 | `pull CANVAS_REF` | `-o/--output DIR`, `--team`, `--id`, `-f/--force`, `-n/--dry-run`, `--show-diff` — same as `export` then extracts; prompts per file on conflict unless `--force`. Pass `--show-diff` (recommended when invoked by an AI assistant) to print a unified diff for every file write or removal so you can summarize the change set back to the user. The changes will be applied with `--show-diff`. |
-| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed. If no canvas with that name exists, a new one is created |
+| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed. If no canvas with that name exists, a new one is created. **Canvas names must match `[a-zA-Z0-9_]` — no spaces or hyphens.** |
 | `rename CANVAS_REF NEW_NAME` | `--id` |
 | `share CANVAS_REF` | `--client-id TEXT`, `--new-token`, `--id` |
 | `unshare CANVAS_REF` | `--id` |

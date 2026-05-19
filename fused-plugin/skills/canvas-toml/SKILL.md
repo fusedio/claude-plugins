@@ -137,3 +137,21 @@ height = 700
 - When adding a UDF: create the `.py` (and any widget file) **and** add a matching `[[canvas.nodes]]` entry with the same stem.
 - When removing a UDF: delete its source file(s) **and** its node entry, plus any `edges` referencing it.
 - UDFs can call each other via `fused.load("<udfName>")`. For multiprocessing, split into a new UDF.
+
+## Edges and canvas parameters
+
+`edges` wire nodes together — both for UDF data flow and to enable canvas **parameter** propagation. Even when nodes communicate via `$param_name` substitution rather than direct data output, an edge from the source node to the display node is still required for the display to receive and react to parameter changes. Always add an edge between an inputs widget node and any display node it drives.
+
+## Node sizing and viewport
+
+Node `width`/`height` are canvas pixels. Typical starting values:
+
+| Node type | Width | Height |
+|---|---|---|
+| JSON UI inputs panel | 400–500 | 600–900 |
+| HTML / preview panel | content width + padding | content height + padding |
+| Python UDF | 600–800 | 400–600 |
+
+Place nodes left-to-right by incrementing `x` by `width + gap` (30–50px gap). Keep `y = 0` for a flat layout.
+
+For the viewport, set `x`/`y` to roughly the canvas midpoint and choose `zoom` between `0.5` (overview) and `1.0` (full size); `0.75` works well for two medium nodes side by side.
