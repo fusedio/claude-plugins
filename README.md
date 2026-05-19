@@ -6,12 +6,8 @@ To install `fused`:
 
 ```sh
 pip install --upgrade fused
-```
-
-To run standalone using `uv`, add `uvx` before `fused` like so:
-
-```sh
-uvx fused
+# Or, to run standalone, add uvx before fused:
+uvx fused claude plugin add
 ```
 
 Then install this as a Claude plugin:
