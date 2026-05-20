@@ -19,6 +19,23 @@ def udf(bounds: fused.types.Bounds = None, name: str = "Fused"):
     return pd.DataFrame({'message': [f'Hello {name}!']})
 ```
 
+> **All imports must be inside the UDF function body.** Unlike regular Python, imports at module level are not executed — only the decorated function runs in the Fused runtime. Put every `import` statement inside `def udf(...)`:
+>
+> ```python
+> # ✗ Wrong — module-level import, will not be available
+> import pandas as pd
+>
+> @fused.udf
+> def udf():
+>     return pd.DataFrame(...)  # NameError: pd not defined
+>
+> # ✓ Correct
+> @fused.udf
+> def udf():
+>     import pandas as pd
+>     return pd.DataFrame(...)
+> ```
+
 ### @fused.udf Parameters
 - `cache_max_age`: Control caching duration (`"30s"`, `"10m"`, `"24h"`, `"7d"`). Use `"0s"` if it is important that the UDF always be rerun, for example if it reads something that will not be part of the cache key. The cache key will be the parameters it is called with.
 
@@ -207,3 +224,17 @@ Use the CLI for rapid development and testing:
 
 Test UDFs locally before pushing to ensure they work correctly. When you're ready to push:
 - `fused canvas push <dir>` - Deploy changes
+
+> **`fused run` always executes the deployed remote version, not your local files.** If you edit a UDF and immediately run `fused run canvas_name udf_name`, you will get the previously deployed version — the CLI prints `"UDF '...' returned cached result"` which can make this easy to miss. Always push first:
+>
+> ```bash
+> # Edit → push → run (correct order)
+> fused canvas push ./my_canvas --canvas my_canvas
+> fused run my_canvas my_udf --param=value
+> ```
+>
+> Alternatively, pass the local `.py` file directly to run without pushing — but note that `fused.secrets` and `fused.api` integrations are only available in the remote runtime:
+>
+> ```bash
+> fused run my_canvas ./my_canvas/my_udf.py --param=value
+> ```
