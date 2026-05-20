@@ -26,7 +26,9 @@ Always confirm the CLI is working with `fused whoami` before proceeding. If `fus
 ## Global flags
 
 - `--env TEXT` (env: `FUSED_ENV`)
-- `--format [json|text]` (env: `FUSED_CLI_FORMAT`) — set to `json` for machine-readable output
+- `--format [json|text]` (env: `FUSED_CLI_FORMAT`) — set to `json` for machine-readable output.
+
+**Note:** These must be specified just after `fused` and before a top level command, as so: `fused --format json canvas list`
 
 ## Top-level commands
 
