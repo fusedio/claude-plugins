@@ -68,22 +68,23 @@ pool.times()            # inspect per-job execution times
 
 ### Attach larger compute with `engine`
 
-By default UDFs run on `small`. For memory-heavy or CPU-heavy work, specify a larger engine on the decorator:
+By default UDFs run serverless (`remote`). For memory-heavy, CPU-heavy, or long-running work, attach a dedicated instance with `engine`:
 
 ```python
 @fused.udf(engine="medium")
 def udf():
-    # 16 vCPU, 64 GB RAM
+    # 16 vCPU, 64 GB RAM, no time limit
     ...
 ```
 
-| Engine | vCPU | RAM | When to use |
-|---|---|---|---|
-| `small` (default) | 4 | 10 GB | Most tasks |
-| `medium` | 16 | 64 GB | Large datasets, ML inference, heavy computation |
-| `large` | 64 | 512 GB | Very large in-memory workloads |
+| Engine | Type | vCPU | RAM | Time limit |
+|---|---|---|---|---|
+| `"remote"` (default) | Serverless | — | ~10 GB | 120s |
+| `"small"` | Dedicated (`t3.small`) | 2 | 2 GB | None |
+| `"medium"` | Dedicated (`m5.4xlarge`) | 16 | 64 GB | None |
+| `"large"` | Dedicated (`r5.16xlarge`) | 64 | 512 GB | None |
 
-Tradeoff: larger engines have a longer cold-start. Use `small` by default; upgrade when you've confirmed memory or CPU is the bottleneck.
+Two reasons to use a dedicated engine: more compute, or **no time limit**. A job that takes 3 minutes can't run on the default serverless runtime but runs fine on `small`. Dedicated engines also have a longer cold-start — use `remote` by default; switch when you've hit the 120s cap or a memory constraint.
 
 You can also override engine per `.map()` call:
 
@@ -105,7 +106,7 @@ results = pool.df()
 
 ## Constraints to know upfront
 
-- **120s execution timeout** per UDF call — hard limit; split long work across UDFs
+- **120s execution timeout** on the default serverless runtime — use a dedicated `engine` to remove this limit
 - **All imports must be inside the UDF function body** — module-level imports are not executed
 - **No persistent in-memory state** between calls — use external storage (Fused files, S3, Notion, etc.) for state
 - **Canvas names: `[a-zA-Z0-9_]` only** — no hyphens; `my_project` not `my-project`
