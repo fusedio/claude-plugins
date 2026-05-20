@@ -7,21 +7,21 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 ## Finding the CLI
 
-`fused` is installed as part of the `fused` Python package. If it is not on `PATH`, locate or install it before running any commands:
+`fused` is installed as part of the `fused` Python package. The CLI ships in `fused>=2`, which requires **Python 3.10 or newer** — on Python 3.9 `pip install fused` falls back to a 1.x release that has no `fused` entry point. If `fused` is not on `PATH`, locate or install it before running any commands:
 
 1. **Check PATH first:** `which fused` — if found, use it directly.
-2. **No virtual environment detected? Use uvx (recommended):** `uvx fused` — runs the latest version without installation.
-3. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`.
-4. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path.
+2. **No virtual environment detected? Use uvx (recommended):** `uvx fused` — runs the latest version without installation and selects a compatible Python automatically, so it works even when the system Python is 3.9.
+3. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`. Confirm the venv is Python 3.10+ (`.venv/bin/python --version`); if it's 3.9, recreate it with `uv venv --python 3.11 .venv` before installing.
+4. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path. If the env is on Python 3.9, create a new one with `conda create -n fused python=3.11`.
 5. **Fresh install (when uvx isn't available):**
    ```bash
-   uv venv ~/.fused-cli-env
-   uv pip install fused --python ~/.fused-cli-env/bin/python
+   uv venv --python 3.11 ~/.fused-cli-env
+   uv pip install 'fused>=2' --python ~/.fused-cli-env/bin/python
    # then call ~/.fused-cli-env/bin/fused
    ```
-   Save the full path for future use so the same env is reused.
+   Pinning `--python 3.11` and `'fused>=2'` avoids the silent 1.x fallback. Save the full path for future use so the same env is reused.
 
-Always confirm the CLI is working with `fused whoami` before proceeding.
+Always confirm the CLI is working with `fused whoami` before proceeding. If `fused: command not found` appears right after a `pip install fused`, check `python --version` — Python 3.9 or older is the most common cause and is fixed by switching to `uvx` or installing into a 3.10+ environment.
 
 ## Global flags
 
