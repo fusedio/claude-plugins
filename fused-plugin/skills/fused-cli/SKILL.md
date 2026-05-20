@@ -147,12 +147,6 @@ Manage Fused for Claude Code via the `claude` CLI.
 
 Every shared canvas exposes a public HTTP API — no Fused SDK or credentials required on the caller side. This is the foundation for building bots, external integrations, and any service that calls Fused from outside Python.
 
-### Share a canvas and make it publicly accessible
-
-`fused canvas share` generates a share token but **does not make the canvas public by default**. A freshly shared canvas still returns 401 to anonymous callers. To make it publicly accessible, open the canvas in the Workbench and set sharing to **Public** in the canvas settings.
-
-Once public, the share token returned by `fused canvas share <canvas>` is all that is needed to call UDFs anonymously.
-
 ### HTTP API URL format
 
 Once the canvas is public, each UDF is callable as:
