@@ -32,12 +32,13 @@ UDFs within a canvas can call each other via `fused.load("udf_name")`, so you ca
 |---|---|
 | Results need to be shared with others via a URL | ✓ |
 | Multiple people or systems need to call the same function | ✓ |
-| Compute exceeds the local machine (memory, CPU, dataset size) | ✓ |
+| Work needs to run in parallel across many inputs | ✓ use `.map()` |
+| Compute exceeds the local machine (memory, CPU, dataset size) | ✓ use `engine="medium/large"` |
 | Work needs to persist and be callable after the session ends | ✓ |
 | Building a dashboard or interactive UI on top of Python logic | ✓ |
 | One-off analysis, no sharing, runs in seconds locally | — local script is fine |
 | Needs interactive terminal input | — not supported |
-| Process runs longer than 120 seconds | — split into smaller UDFs |
+| Single job that runs longer than 120 seconds | — split into smaller UDFs and use `.map()` |
 
 The clearest signal: **if someone other than you needs to call it, or if it needs to still work tomorrow**, put it in Fused.
 
@@ -57,12 +58,80 @@ The clearest signal: **if someone other than you needs to call it, or if it need
 
 ---
 
+## Parallelism and scale
+
+This is one of the biggest advantages of structuring work as UDFs. Two levers:
+
+### Run many jobs in parallel with `.map()`
+
+Call any UDF across a list of inputs — each input spawns its own instance, all running concurrently:
+
+```python
+@fused.udf
+def udf(item: str = ""):
+    # process one item
+    import pandas as pd
+    return pd.DataFrame({"result": [item.upper()]})
+
+# From another UDF or from Python:
+pool = udf.map(["a", "b", "c", "d", "e"])
+results = pool.df()       # collect all results into a DataFrame
+pool.times()              # inspect per-job execution times
+```
+
+Design principle: **split a large job into many small UDFs rather than one big one.** A task that processes 100 items sequentially in 10 minutes becomes 100 parallel 6-second jobs. The 120-second per-job limit is easy to stay under when each UDF does one unit of work.
+
+### Attach larger compute with `engine`
+
+By default UDFs run on `small` (2 vCPU, 2 GB RAM). For memory-heavy or CPU-heavy work, specify a larger engine on the decorator:
+
+```python
+@fused.udf(engine="medium")
+def udf():
+    # 16 vCPU, 64 GB RAM available
+    import pandas as pd
+    ...
+
+@fused.udf(engine="large")
+def udf():
+    # 64 vCPU, 512 GB RAM available
+    ...
+```
+
+| Engine | vCPU | RAM | When to use |
+|---|---|---|---|
+| `small` (default) | 2 | 2 GB | Most tasks |
+| `medium` | 16 | 64 GB | Large datasets, ML inference, heavy computation |
+| `large` | 64 | 512 GB | Very large in-memory workloads |
+
+Tradeoff: larger engines have a longer cold-start time. Use `small` by default; only upgrade when you've confirmed the bottleneck is memory or compute.
+
+You can also specify engine at call time via `.map()`:
+
+```python
+pool = udf.map(inputs, engine="medium")
+pool.wait()
+```
+
+### Combining both
+
+Split + parallelize + scale:
+
+```python
+# Each chunk runs on medium compute, all in parallel
+pool = process_chunk.map(chunks, engine="medium")
+results = pool.df()
+```
+
+---
+
 ## How to structure a new project
 
 1. **One canvas per project.** Don't put unrelated work in the same canvas — permissions and sharing apply to everything in it.
 2. **One UDF per logical function.** If two things have different inputs, outputs, or scaling needs, they should be separate UDFs.
-3. **Keep UDFs under ~30–45 seconds.** The 120-second hard timeout applies per UDF execution. For longer work, split into pipeline stages or use fire-and-forget with a job reference.
-4. **Add a widget if humans need a UI.** A `widget.json` alongside a UDF gives you an interactive panel in the Workbench — inputs, charts, maps, tables — without any frontend code.
+3. **Prefer many small UDFs over one large one.** Small UDFs can be parallelized with `.map()`, called independently, and are easier to debug. A UDF that does one thing is a good UDF.
+4. **Keep each UDF under ~30–45 seconds.** The 120-second hard timeout applies per execution. Use `.map()` to parallelize across inputs rather than looping inside a single UDF.
+5. **Add a widget if humans need a UI.** A `widget.json` alongside a UDF gives you an interactive panel in the Workbench — inputs, charts, maps, tables — without any frontend code.
 
 ---
 
