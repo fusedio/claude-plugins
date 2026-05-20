@@ -30,22 +30,6 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 - `style` is always a CSS string (`"padding: 8px; color: red"`), not an object.
 - Charts default `barColor`/`lineColor` to Fused lime yellow (`#E8FF59`).
 
-## Widget values are always strings
-
-All widget values — including `dropdown`, `slider`, and `number-input` — are passed to the UDF as **strings**, even when the UDF parameter is typed as `bool` or `int`. Always coerce at the top of the UDF:
-
-```python
-@fused.udf
-def udf(dry_run: bool = False, limit: int = 100):
-    # dropdown passes "true"/"false", not True/False
-    if isinstance(dry_run, str):
-        dry_run = dry_run.lower() in ("true", "1", "yes")
-    # number-input passes "100", not 100
-    limit = int(limit)
-```
-
-This applies any time a UDF parameter is exposed via a widget — the canvas runtime always serializes values as strings before forwarding them.
-
 ## How to use this skill
 
 1. Open `reference.md` and find the section for the widget `type` you're working with.
