@@ -1,13 +1,13 @@
 ---
 name: fused-integrations
-description: Reference for using Fused's built-in integration connections inside UDFs. Covers data sources (Snowflake, BigQuery, GCS, S3, Airtable, Notion, Google Drive) and compute/inference providers (Modal, Hugging Face, Baseten, Daytona, ComfyOrg, Slack) — the fused.api connect helpers, secrets access, and common operations (query, write, list, invoke, infer). Use when the user is writing a UDF that reads from, writes to, or calls out to a connected service.
+description: Reference for using Fused's built-in integration connections inside UDFs. Covers data sources (Snowflake, BigQuery, GCS, S3, Airtable, Notion, Google Drive), compute/inference providers (Modal, Hugging Face, Baseten, Daytona, ComfyOrg, Slack), and LLM providers (Anthropic, OpenAI) — the fused.api connect helpers, secrets access, and common operations (query, write, list, invoke, infer). Use when the user is writing a UDF that reads from, writes to, or calls out to a connected service.
 ---
 
 # Fused Integrations
 
 Once an integration is configured (via the Workbench → Integrations UI or `fused integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
 
-Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `modal`, `huggingface`, `baseten`, `daytona`, `comfy`, `slack` (experimental).
+Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `modal`, `huggingface`, `baseten`, `daytona`, `comfy`, `anthropic`, `openai`, `slack` (experimental).
 
 ---
 
@@ -771,6 +771,198 @@ workflow["3"]["inputs"]["image"] = uploaded_name
 ### Cache the slow job, wrap with a thin UDF
 
 Generation is expensive — split the work: a `@fused.cache` helper that submits/polls/uploads to S3, and a thin `@fused.udf(engine="small")` wrapper that returns a `fused.api.sign_url(...)`. `engine="small"` runs as a batch job so you escape the 120-second realtime UDF limit (often necessary for video).
+
+---
+
+## Anthropic
+
+Docs: https://docs.anthropic.com/en/api/client-sdks/python
+
+API key stored as `ANTHROPIC_API_KEY`. `fused.api.anthropic_connect()` returns an authenticated `anthropic.Anthropic` client — the full SDK surface is available (`client.messages`, `client.models`, `client.beta`).
+
+### Chat completion
+
+```python
+@fused.udf()
+def udf(question: str = "Explain map projections in three sentences."):
+    client = fused.api.anthropic_connect()
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": question}],
+    )
+    return message.content[0].text
+```
+
+### System prompt
+
+```python
+client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    system="You are a geospatial data expert. Answer concisely.",
+    messages=[{"role": "user", "content": question}],
+)
+```
+
+### Streaming
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a Haversine function."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+### Tool use
+
+```python
+tools = [{
+    "name": "get_weather",
+    "description": "Get the current weather for a location.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"latitude": {"type": "number"}, "longitude": {"type": "number"}},
+        "required": ["latitude", "longitude"],
+    },
+}]
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
+)
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name, block.input)
+```
+
+### Vision (base64 image)
+
+```python
+import base64
+with open("satellite.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode()
+client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}},
+            {"type": "text", "text": "Describe the land use patterns."},
+        ],
+    }],
+)
+```
+
+> **Anthropic image format differs from OpenAI.** Anthropic uses `{"type": "image", "source": {"type": "base64", "media_type": ..., "data": ...}}`. OpenAI uses `{"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}`. Don't swap them.
+
+Token usage is on `message.usage.input_tokens` / `message.usage.output_tokens`.
+
+---
+
+## OpenAI
+
+Docs: https://platform.openai.com/docs/libraries/python
+
+API key stored as `OPENAI_API_KEY`. `fused.api.openai_connect()` returns an authenticated `openai.OpenAI` client — the full SDK surface is available (`client.chat.completions`, `client.embeddings`, `client.images`, `client.models`).
+
+### Chat completion
+
+```python
+@fused.udf()
+def udf(question: str = "Summarize GeoParquet's key features."):
+    client = fused.api.openai_connect()
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}],
+    )
+    return response.choices[0].message.content
+```
+
+### System prompt
+
+```python
+client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a geospatial data expert. Answer concisely."},
+        {"role": "user", "content": question},
+    ],
+)
+```
+
+### Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a Haversine function."}],
+    stream=True,
+)
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+
+### Function calling
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "parameters": {
+            "type": "object",
+            "properties": {"latitude": {"type": "number"}, "longitude": {"type": "number"}},
+            "required": ["latitude", "longitude"],
+        },
+    },
+}]
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
+    tools=tools,
+)
+for tc in response.choices[0].message.tool_calls or []:
+    print(tc.function.name, tc.function.arguments)  # arguments is a JSON string — json.loads it
+```
+
+### Vision (data URI)
+
+```python
+import base64
+with open("satellite.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode()
+client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_data}"}},
+            {"type": "text", "text": "Describe the land use patterns."},
+        ],
+    }],
+)
+```
+
+### Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=["geospatial data processing", "satellite imagery analysis"],
+)
+vectors = [d.embedding for d in response.data]
+```
+
+Token usage is on `response.usage.prompt_tokens` / `response.usage.completion_tokens` (note: different names than Anthropic).
 
 ---
 
