@@ -143,6 +143,39 @@ Manage Fused for Claude Code via the `claude` CLI.
 | `install` | `--shell [auto\|bash\|zsh\|fish]`, `--dry-run`, `-y/--yes` — append a one-liner to `~/.bashrc`/`~/.zshrc` or write fish's completion file |
 | `print {bash\|zsh\|fish}` | Print a completion script suitable for `eval` or fish's completions dir |
 
+## Calling UDFs via HTTP
+
+Every shared canvas exposes a public HTTP API — no Fused SDK or credentials required on the caller side. This is the foundation for building bots, external integrations, and any service that calls Fused from outside Python.
+
+### HTTP API URL format
+
+Once the canvas is public, each UDF is callable as:
+
+```
+GET https://udf.ai/<share_token>/<udf_name>?param1=value1&param2=value2&format=json
+```
+
+- `format=json` returns a JSON array of row objects (one per DataFrame row). Omitting it returns a binary format.
+- Parameters are passed as query string values — strings, integers, and booleans all work.
+
+**Example:**
+```bash
+curl "https://udf.ai/fc_abc123/ask_question?question=what+is+fused&format=json"
+# → [{"answer": "Fused is a platform for running Python in the cloud..."}]
+```
+
+### Discover available UDFs
+
+The `.api.json` endpoint returns an OpenAPI spec listing all UDFs in the canvas and their parameters:
+
+```bash
+curl "https://udf.ai/<share_token>.api.json"
+```
+
+Use this to build tool lists for LLM agents — the `summary` field in each path is the UDF's docstring, which the canvas bot uses as the tool description.
+
+---
+
 ## `fused run CANVAS UDF`
 
 Runs a UDF and prints the result. The `UDF` argument is passed to `fused.load`, which accepts:
@@ -162,6 +195,14 @@ Options:
 - `--disk-size-gb INTEGER`
 - `--stdin` — read UDF source from stdin instead of passing `UDF` (do not pass `UDF` with `--stdin`)
 - `--verbose / --no-verbose` — show UDF stdout/stderr (default on)
+
+> **`--with pandas` required for local result deserialization.** When running via `uv run`, the result DataFrame is deserialized locally and requires `pandas` to be available in that environment. Without it you get `ModuleNotFoundError: No module named 'pandas'` even if the UDF itself doesn't use pandas. Always add `--with pandas`:
+>
+> ```bash
+> uv run --no-project --with fused --with pandas fused run my_canvas my_udf --param=value
+> ```
+>
+> `--no-project` avoids pulling in the current directory's dependencies, which can conflict with fused's requirements.
 
 Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's signature**, e.g. `--abc=123` is forwarded as the `abc` parameter to the UDF. These pass-through args are not listed in `--help`.
 
