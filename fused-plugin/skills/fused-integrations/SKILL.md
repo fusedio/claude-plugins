@@ -331,7 +331,15 @@ def udf():
 
 Docs: https://docs.fused.io/workbench/integrations/notion
 
-All operations go through `fused.api.notion_connect()`, which returns a thin wrapper. Call `.client()` to get a full `notion-client` SDK instance.
+All operations go through `fused.api.notion_connect()`, which returns a thin wrapper. Call `.client()` to get a full `notion-client` SDK instance — `nt` itself does not expose search/create/etc. directly.
+
+> **Access grant required.** If you get `APIResponseError: Could not find page`, the Notion integration hasn't been granted access to that page or database. Fix: Workbench → Integrations → Notion → reconnect and grant access to all relevant pages/databases. This is separate from the OAuth connect step.
+
+> **Notion URL parsing.** URLs copied from Notion often include a query string and block anchor: `https://www.notion.so/workspace/Page-abc123?v=uuid&source=copy_link#blockanchor`. The `#blockanchor` is 32 hex chars and will match a page-ID regex if not stripped first. Always clean the URL before extracting the ID:
+> ```python
+> clean = url.split("#")[0].split("?")[0].rstrip("/")
+> slug = clean.split("/")[-1]
+> ```
 
 ### Search pages
 
@@ -360,14 +368,22 @@ def udf():
 
 ### Query a database
 
+> **⚠ `client.databases.query()` is not available in the Fused Notion client.** Calling it raises `AttributeError: 'DatabasesEndpoint' object has no attribute 'query'`. Use `client.search()` with a page filter instead:
+
 ```python
 @fused.udf()
 def udf():
     nt = fused.api.notion_connect()
     client = nt.client()
-    response = client.databases.query(database_id="your-database-id")
-    for page in response["results"]:
-        print(page["id"], page["properties"])
+    # Search within a specific database by filtering on the database ID via parent
+    results = client.search(
+        query="",
+        filter={"property": "object", "value": "page"},
+    )
+    for r in results.get("results", []):
+        # Check parent to scope to a specific database
+        if r.get("parent", {}).get("database_id") == "your-database-id":
+            print(r["id"], r["properties"])
 ```
 
 ### Create a page in a database
@@ -385,6 +401,42 @@ def udf():
         },
     )
 ```
+
+### Create a page with formatted bullet-point content
+
+Pass `children` as a list of block dicts. Use `bulleted_list_item` blocks (not a single `paragraph` with `\n`) so content renders as actual bullets. Use `annotations` for bold labels:
+
+```python
+@fused.udf()
+def udf():
+    nt = fused.api.notion_connect()
+    client = nt.client()
+
+    def bullet(label, text):
+        return {
+            "object": "block",
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {
+                "rich_text": [
+                    {"type": "text", "text": {"content": label}, "annotations": {"bold": True}},
+                    {"type": "text", "text": {"content": " " + text}},
+                ]
+            },
+        }
+
+    client.pages.create(
+        parent={"database_id": "your-database-id"},
+        properties={
+            "Name": {"title": [{"text": {"content": "My ticket"}}]},
+        },
+        children=[
+            bullet("What:", "The widget fails on empty datasets."),
+            bullet("Fix:", "Add a null-check before rendering."),
+        ],
+    )
+```
+
+> **Note:** Putting formatted content in a single `paragraph` block with `\n` separators renders `**bold**` as literal asterisks. Always use separate block types.
 
 ### Pull all pages into a DataFrame
 
@@ -415,3 +467,5 @@ Any secret stored via `fused secrets set KEY VALUE` (or the Workbench UI) is ava
 def udf():
     api_key = fused.secrets["my_api_key"]
 ```
+
+> **`fused.secrets` raises on missing keys.** Accessing a key that doesn't exist raises `SecretKeyNotFound`, not `KeyError` and not `None`. Run `fused secrets list` to verify a key exists before relying on it in a UDF.

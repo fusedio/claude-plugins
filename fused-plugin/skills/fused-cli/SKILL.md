@@ -156,6 +156,12 @@ Options:
 
 Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's signature**, e.g. `--abc=123` is forwarded as the `abc` parameter to the UDF. These pass-through args are not listed in `--help`.
 
+When running locally via `uv run`, include `--with pandas` if the UDF returns a DataFrame — the CLI needs pandas to deserialize the result, and the error (`ModuleNotFoundError: No module named 'pandas'`) appears at result-read time, not inside the UDF itself:
+
+```bash
+uv run --with fused --with pandas fused run my_canvas my_udf --param=value
+```
+
 ## `fused udf-schema CANVAS UDF`
 
 Prints a UDF's API schema (parameter types, return shape) without executing it. The `UDF` argument is passed to `fused.load` and accepts the same forms as `fused run`:
