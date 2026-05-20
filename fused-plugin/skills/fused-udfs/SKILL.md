@@ -37,7 +37,17 @@ def udf(bounds: fused.types.Bounds = None, name: str = "Fused"):
 > ```
 
 ### @fused.udf Parameters
-- `cache_max_age`: Control caching duration (`"30s"`, `"10m"`, `"24h"`, `"7d"`). Use `"0s"` if it is important that the UDF always be rerun, for example if it reads something that will not be part of the cache key. The cache key will be the parameters it is called with.
+- `cache_max_age`: Control caching duration (`"30s"`, `"10m"`, `"24h"`, `"7d"`). Use `cache_max_age=0` if it is important that the UDF always be rerun, for example if it reads something that will not be part of the cache key. The cache key will be the parameters it is called with.
+
+> **`cache_max_age=0` is mandatory for UDFs with side effects.** If a UDF creates a Notion ticket, sends a message, writes to a database, or performs any other write, omitting `cache_max_age=0` means a second call with the same parameters returns the cached result silently — the write never happens. Always set `cache_max_age=0` on any UDF that produces output beyond its return value:
+>
+> ```python
+> @fused.udf(cache_max_age=0)   # ← required — creates a ticket every call
+> def udf(title: str = "Bug report", description: str = ""):
+>     nt = fused.api.notion_connect()
+>     client = nt.client()
+>     client.pages.create(...)
+> ```
 
 ## Parameter Handling & Types
 
@@ -148,26 +158,41 @@ Keep only essential business logic in the decorated function. Extract complex op
 
 **📖 Reference:** [Building UDFs for Agents](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/agents/)
 
-### Descriptive Docstrings
+### Docstrings as tool descriptions
+
+When a canvas is used as an LLM tool backend (via the canvas bot or MCP), the UDF's docstring becomes the tool description the model reads to decide *when* and *how* to call it. **The docstring must say when to call the UDF, not just what it does.**
+
 ```python
-@fused.udf
-def get_population_data(bounds: fused.types.Bounds = None, year: int = 2020):
+# ✗ Describes what — doesn't tell the LLM when to use it
+def udf(title: str, description: str):
+    """Creates a page in the Notion Engineering Tasks database."""
+
+# ✓ Describes when — LLM knows to call this on any bug report
+@fused.udf(cache_max_age=0)
+def udf(title: str = "Bug report", description: str = "", is_severe: bool = False):
     """
-    Retrieve population statistics for a geographic area.
-    
-    Use this UDF when an agent needs population data for:
-    - Demographic analysis within specific boundaries
-    - Population density calculations
-    - Urban planning assessments
-    
-    Args:
-        bounds: Geographic bounding box for the area of interest
-        year: Year for population data (2010-2023 available)
-    
-    Returns:
-        GeoDataFrame with population statistics by census tract
+    Creates a bug ticket in the Fused Engineering Tasks Notion database.
+
+    Call this whenever a user reports:
+    - Something in Fused not working as expected
+    - Unexpected errors or broken behavior
+    - Missing, incorrect, or confusing documentation
+
+    Always call this in addition to answering the user's question — do not
+    skip it when a bug or docs issue is detected.
+
+    Set is_severe=True if the bug completely blocks the user from using Fused,
+    causes data loss, or sounds like a critical production failure.
+    Leave is_severe=False for minor issues, docs gaps, or unclear severity.
     """
 ```
+
+### Design principles for LLM-callable UDFs
+
+- **Simple parameter types** — use `str`, `int`, `bool`. Avoid complex objects; the LLM constructs arguments from the docstring description and can't build nested structures reliably.
+- **Meaningful return columns** — the LLM reads the tool result, so `{"status": "created", "url": "..."}` is useful feedback; an unlabelled array is not.
+- **One action per UDF** — an LLM tool that "searches docs and creates a ticket if needed" is harder to invoke correctly than two separate tools. Keep each UDF focused.
+- **`cache_max_age=0` on all write UDFs** — see the note above; silent cache hits are a common failure mode for ticket-creation and notification UDFs.
 
 ## Security Best Practices
 
