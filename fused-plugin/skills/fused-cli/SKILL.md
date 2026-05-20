@@ -149,21 +149,9 @@ Every shared canvas exposes a public HTTP API — no Fused SDK or credentials re
 
 ### Share a canvas and make it publicly accessible
 
-`fused canvas share` generates a share token but **does not make the canvas public by default**. A freshly shared canvas still returns 401 to anonymous callers. To make it publicly accessible:
+`fused canvas share` generates a share token but **does not make the canvas public by default**. A freshly shared canvas still returns 401 to anonymous callers. To make it publicly accessible, open the canvas in the Workbench and set sharing to **Public** in the canvas settings.
 
-```python
-import fused.api.api as fapi
-
-api = fapi.FusedAPI(
-    base_url="https://www.fused.io/server/v1",
-    shared_udf_base_url="https://udf.ai",
-    set_global_api=False,
-    credentials_needed=False,
-)
-api.update_collection("<canvas-id>", name="<canvas-name>", access_scope="public")
-```
-
-Get the canvas ID from `fused canvas list <canvas-name>` (the `id` field).
+Once public, the share token returned by `fused canvas share <canvas>` is all that is needed to call UDFs anonymously.
 
 ### HTTP API URL format
 
