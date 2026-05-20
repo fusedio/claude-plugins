@@ -1,0 +1,209 @@
+---
+name: fused-udfs
+description: Comprehensive guide for writing Fused User Defined Functions (UDFs). Use when helping users create, optimize, or debug UDFs, including function structure, parameter handling, performance optimization, agent-friendly design, and security best practices.
+---
+
+# Writing Fused UDFs
+
+Reference docs.fused.io for the most up-to-date information.
+
+**📖 References:** [UDF Writing Guide](https://docs.fused.io/guide/working-with-udfs/writing-udfs/) | [UDF Best Practices](https://docs.fused.io/user-guide/best-practices/udf-best-practices/) | [Getting Started](https://docs.fused.io/guide/getting-started/first-udf-basics/)
+
+## Function Structure & Decorators
+
+### Basic UDF Pattern
+```python
+@fused.udf
+def udf(bounds: fused.types.Bounds = None, name: str = "Fused"):
+    import pandas as pd
+    return pd.DataFrame({'message': [f'Hello {name}!']})
+```
+
+### @fused.udf Parameters
+- `cache_max_age`: Control caching duration (`"30s"`, `"10m"`, `"24h"`, `"7d"`). Use `"0s"` if it is important that the UDF always be rerun, for example if it reads something that will not be part of the cache key. The cache key will be the parameters it is called with.
+
+## Parameter Handling & Types
+
+**📖 Reference:** [UDF Editor](https://docs.fused.io/workbench/udf-editor/)
+
+### Type Annotations
+UDFs resolve parameters to annotated types:
+```python
+import geopandas as gpd
+import pandas as pd
+
+@fused.udf
+def udf(
+    bounds: fused.types.Bounds = None,
+    gdf: gpd.GeoDataFrame = None,
+    df: pd.DataFrame = None,
+    name: str = "default",
+    count: int = 100,
+    flag: bool = True
+):
+    # Function body
+```
+
+### Agent-Friendly Defaults
+Provide sensible defaults so agents can call UDFs without specifying every parameter:
+```python
+@fused.udf
+def get_data(bounds: fused.types.Bounds = None, year: int = 2020, limit: int = 1000):
+    """Agent can call with just bounds if needed."""
+```
+
+## Return Types
+
+**📖 Reference:** [Write UDFs](https://docs.fused.io/core-concepts/write/)
+
+UDFs can return:
+- `pd.DataFrame`, `pd.Series`
+- `gpd.GeoDataFrame`, `gpd.GeoSeries`
+- `shapely.Geometry`
+- Arrays (must be 2D or higher)
+
+```python
+# DataFrame return
+return pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
+
+# GeoDataFrame return
+gdf = gpd.GeoDataFrame({
+    'geometry': [Point(0, 0), Point(1, 1)],
+    'value': [10, 20]
+})
+return gdf
+```
+
+### Cross-UDF Loading
+For loading a UDF that is defined in the same canvas, specify its name:
+```python
+@fused.udf
+def udf():
+    common = fused.load("my_other_udf")
+    return common.some_function()
+```
+
+For loading a UDF from GitHub, prefer specifying its Git SHA. Prefer using the latest Git SHA - do not guess an SHA - in the following format:
+```python
+@fused.udf
+def udf():
+    common = fused.load("https://github.com/fusedio/udfs/tree/******/public/common/")
+    return common.some_function()
+```
+
+## Performance Optimization
+
+**📖 Reference:** [Scaling Out UDFs](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/scaling-out/)
+
+### @fused.cache Decorator
+Cache expensive operations to improve performance:
+```python
+@fused.udf
+def udf(data_path: str):
+    import pandas as pd
+    
+    @fused.cache  # Persist across runs
+    def load_data(path):
+        return pd.read_csv(path)  # Slow operation
+    
+    @fused.cache(cache_max_age='1h')  # Time-limited cache
+    def process_data(df):
+        return df.groupby('category').sum()
+    
+    df = load_data(data_path)
+    return process_data(df)
+```
+
+### Performance Guidelines
+- Keep UDFs short and fast (aim for 30-45 seconds, timeout at 120 seconds)
+- Use caching for expensive operations
+- Cache data loading, not business logic that changes frequently
+- Consider hierarchical caching for complex pipelines
+
+## Code Organization
+
+**📖 Reference:** [Storage Options](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/storage/)
+
+### Business Logic Focus
+Keep only essential business logic in the decorated function. Extract complex operations to utils or separate functions.
+
+## Agent-Friendly Design
+
+**📖 Reference:** [Building UDFs for Agents](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/agents/)
+
+### Descriptive Docstrings
+```python
+@fused.udf
+def get_population_data(bounds: fused.types.Bounds = None, year: int = 2020):
+    """
+    Retrieve population statistics for a geographic area.
+    
+    Use this UDF when an agent needs population data for:
+    - Demographic analysis within specific boundaries
+    - Population density calculations
+    - Urban planning assessments
+    
+    Args:
+        bounds: Geographic bounding box for the area of interest
+        year: Year for population data (2010-2023 available)
+    
+    Returns:
+        GeoDataFrame with population statistics by census tract
+    """
+```
+
+## Security Best Practices
+
+**📖 Reference:** [Security](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/security/)
+
+### Secrets
+
+**📖 Reference:** [Secrets management](https://docs.fused.io/guide/advanced-setup/secrets-management)
+
+- Never put secrets in UDF code. Always store them in secrets or use integrations.
+
+### Input Validation
+```python
+@fused.udf
+def secure_udf(user_input: str, file_name: str):
+    from pathlib import Path
+    import pandas as pd
+    
+    # Validate inputs
+    if not user_input or len(user_input) > 1000:
+        return pd.DataFrame({'error': ['Invalid input length']})
+
+    # Validate filename format before path resolution
+    if not file_name or file_name.startswith(('/', '\\')):
+        return pd.DataFrame({'error': ['Invalid file path']})
+
+    allowed_dir = Path('/allowed/directory').resolve()
+    safe_path = (allowed_dir / file_name).resolve()
+
+    # Defense in depth: enforce directory containment
+    if allowed_dir not in safe_path.parents:
+        return pd.DataFrame({'error': ['Invalid file path']})
+
+    return pd.read_csv(safe_path)
+```
+
+### Never Accept From Agents
+- Free-form SQL queries
+- Table names
+- Absolute file paths or traversal sequences (`..`)
+- System commands
+- Python code to be `eval`'d.
+
+All agent-supplied parameters should be treated as untrusted input.
+If dynamic file names are required, resolve and validate the full path before use.
+
+## Testing UDFs
+
+**📖 Reference:** [Small UDF Run](https://docs.fused.io/core-concepts/run-udfs/run-small-udfs/), see also the `fused-cli` skill
+
+Use the CLI for rapid development and testing:
+- `fused run <canvas> <udf> --profile` - Test UDF execution and evaluate performance (prefer running with `--profile` if possible)
+- `fused json-ui validate <file>` - Validate widget configs
+
+Test UDFs locally before pushing to ensure they work correctly. When you're ready to push:
+- `fused canvas push <dir>` - Deploy changes
