@@ -66,6 +66,15 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 
 - When pushing a canvas, prefer to test the canvas to make sure your changes work. For JSON UI nodes, you can run using `fused json-ui run-inline-widget`/`fused json-ui run-shared-widget`, for UDFs, you can run them using `fused run`.
 
+**Directory name ≠ canvas name.** By default `push` uses the source directory's name as the canvas name. If your local folder is named differently from the remote canvas (e.g. folder is `fused-canvas/`, remote canvas is `feedback_pipeline`), the push will try to create a new canvas with the folder's name — and fail if that name contains hyphens. Always pass `--canvas` explicitly when the names differ:
+
+```bash
+# Push ./fused-canvas/ to the existing canvas named "feedback_pipeline"
+fused canvas push ./fused-canvas --canvas feedback_pipeline
+```
+
+If you're unsure of the remote canvas name, run `fused canvas list` first.
+
 ## `fused files`
 
 | Subcommand | Args / notable options |
