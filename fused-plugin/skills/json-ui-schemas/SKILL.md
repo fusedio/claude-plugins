@@ -30,25 +30,6 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 - `style` is always a CSS string (`"padding: 8px; color: red"`), not an object.
 - Charts default `barColor`/`lineColor` to Fused lime yellow (`#E8FF59`).
 
-## Widget control values are strings; node-to-node edges pass typed values
-
-Values set through UI widget controls — `dropdown`, `slider`, `number-input`, etc. — are passed to the UDF as **strings**, even when the UDF parameter is typed as `bool` or `int`.
-
-However, when a UDF parameter receives its value from **another UDF node** via a canvas edge, it gets the actual typed Python value (a real `bool`, `int`, etc.). Because the same parameter can be driven by either source, always guard with `isinstance` before coercing:
-
-```python
-@fused.udf
-def udf(dry_run: bool = False, limit: int = 100):
-    # widget dropdown passes "true"/"false"; node-to-node edge passes True/False directly
-    if isinstance(dry_run, str):
-        dry_run = dry_run.lower() in ("true", "1", "yes")
-    # widget number-input passes "100"; node-to-node edge passes 100 directly
-    if isinstance(limit, str):
-        limit = int(limit)
-```
-
-The `isinstance` guard is essential for `bool` coercion — calling `.lower()` on a real `bool` raises `AttributeError`.
-
 ## How to use this skill
 
 1. Open `reference.md` and find the section for the widget `type` you're working with.
