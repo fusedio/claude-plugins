@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "WebFetch(domain:docs.fused.io)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr *)",
+      "Bash(fused canvas *)",
+      "Bash(fused run *)",
+      "Bash(fused secrets *)",
+      "Bash(fused whoami*)",
+      "Bash(uv run --no-project --with fused *)"
+    ]
+  }
+}
