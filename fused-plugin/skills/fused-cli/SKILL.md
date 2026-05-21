@@ -166,6 +166,19 @@ Manage Fused for Claude Code via the `claude` CLI.
 | `install` | `--shell [auto\|bash\|zsh\|fish]`, `--dry-run`, `-y/--yes` — append a one-liner to `~/.bashrc`/`~/.zshrc` or write fish's completion file |
 | `print {bash\|zsh\|fish}` | Print a completion script suitable for `eval` or fish's completions dir |
 
+## Calling UDFs: HTTP vs `fused run`
+
+Use this to decide which approach to suggest:
+
+| | `fused run` | HTTP API |
+| --- | --- | --- |
+| **When to use** | Local development, testing, debugging | External integrations, bots, callers without Fused credentials |
+| **Canvas must be shared?** | No — works on private canvases | Yes — `fused canvas share` must be run first |
+| **Auth required?** | Yes — must be authenticated as the canvas owner | No — share token in the URL is sufficient |
+| **Caller environment** | Anywhere `fused` CLI is installed | Any HTTP client (curl, browser, another service) |
+
+**Default to `fused run` during development.** Only suggest HTTP when the goal is an external caller or a production integration that runs without Fused credentials. Never suggest an HTTP call on a canvas that hasn't been shared — it will return 404 or 403.
+
 ## Calling UDFs via HTTP
 
 Every shared canvas exposes a public HTTP API — no Fused SDK or credentials required on the caller side. This is the foundation for building bots, external integrations, and any service that calls Fused from outside Python.
