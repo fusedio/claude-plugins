@@ -75,6 +75,29 @@ fused canvas push ./fused-canvas --canvas feedback_pipeline
 
 If you're unsure of the remote canvas name, run `fused canvas list` first.
 
+## Reading an existing canvas
+
+To understand what a canvas contains, pull it locally first, then read the files:
+
+```bash
+fused canvas pull CANVAS_REF -o ./local_canvas
+```
+
+Once pulled, the output directory contains:
+- `canvas.toml` — nodes, edges, viewport (see the `fused:canvas-toml` skill for the full format)
+- `*.py` / `*.json` / `*.md` / `*.html` — one source file per UDF node
+
+To inspect a single UDF's parameters without pulling the full canvas, use `fused udf-schema CANVAS UDF`.
+
+### Anti-patterns
+
+| Avoid | Why | Instead |
+| --- | --- | --- |
+| `fused canvas export` to inspect a canvas | Downloads a zip that needs manual extraction | `fused canvas pull -o ./dir` extracts automatically |
+| `fused canvas pull --dry-run` then reading local files | `--dry-run` prints what would be created/updated/removed but writes nothing to disk | Omit `--dry-run` when you need to read files locally |
+| Running `fused run` on each UDF to understand what it does | Executes UDFs remotely — slow and consumes compute | Read the `.py` source files after pulling |
+| `fused canvas list` to see canvas structure | Only shows metadata (name, ID) — not nodes or UDF content | Pull the canvas and read `canvas.toml` |
+
 ## `fused files`
 
 | Subcommand | Args / notable options |
