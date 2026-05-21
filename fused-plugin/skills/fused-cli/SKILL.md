@@ -94,7 +94,7 @@ To inspect a single UDF's parameters without pulling the full canvas, use `fused
 | Avoid | Why | Instead |
 | --- | --- | --- |
 | `fused canvas export` to inspect a canvas | Downloads a zip that needs manual extraction | `fused canvas pull -o ./dir` extracts automatically |
-| `fused canvas pull --dry-run` then reading local files | `--dry-run` prints a diff but writes nothing to disk | Omit `--dry-run` when you need to read files locally |
+| `fused canvas pull --dry-run` then reading local files | `--dry-run` prints what would be created/updated/removed but writes nothing to disk | Omit `--dry-run` when you need to read files locally |
 | Running `fused run` on each UDF to understand what it does | Executes UDFs remotely — slow and consumes compute | Read the `.py` source files after pulling |
 | `fused canvas list` to see canvas structure | Only shows metadata (name, ID) — not nodes or UDF content | Pull the canvas and read `canvas.toml` |
 
