@@ -1,13 +1,112 @@
 ---
 name: fused-integrations
-description: Reference for using Fused's built-in integration connections inside UDFs. Covers Snowflake, BigQuery, GCS, S3, Airtable, and Notion — the fused.api connect helpers, secrets access, and common operations (query, write, list). Use when the user is writing a UDF that reads from or writes to a connected data source.
+description: Reference for using Fused's built-in integration connections inside UDFs. Covers Snowflake, BigQuery, GCS, S3, Airtable, Notion, and Google Drive — the fused.api connect helpers, secrets access, and common operations (query, write, list). Use when the user is writing a UDF that reads from or writes to a connected data source.
 ---
 
 # Fused Integrations
 
 Once an integration is configured (via the Workbench → Integrations UI or `fused integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
 
-Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `slack` (experimental).
+Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `slack` (experimental).
+
+---
+
+## Google Drive
+
+Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.
+
+### gdrive:// path format
+
+```
+gdrive://<folder_id>/<folder_name>/   # list a folder
+gdrive://<file_id>/<filename>         # read a specific file
+gdrive://root/                        # all Picker-granted files at root
+```
+
+### List files
+
+```python
+@fused.udf
+def udf():
+    return fused.api.list("gdrive://root/")
+```
+
+### Read tabular files (CSV, Excel)
+
+```python
+@fused.udf
+def udf():
+    import pandas as pd
+    return pd.read_csv("gdrive://<file_id>/<name>.csv")
+```
+
+```python
+@fused.udf
+def udf():
+    import pandas as pd
+    return pd.read_excel("gdrive://<file_id>/<name>.xlsx")
+```
+
+Google-native formats are auto-exported: Sheets → `.xlsx`, Docs → `.docx`, Slides → `.pptx`, Drawings → `.png`.
+
+### Read binary files / return to frontend
+
+Base64-encode the raw bytes and return a data URI in the DataFrame — no `fd://` write needed:
+
+```python
+import base64, mimetypes, io, pandas as pd
+
+data = fused.api.get(gdrive_path)   # e.g. "gdrive://<id>/<name>.jpg"
+file_name = gdrive_path.split("/")[-1]
+
+# Tabular — return DataFrame directly
+if file_name.endswith(".csv"):
+    return pd.read_csv(io.BytesIO(data))
+if file_name.endswith((".xlsx", ".xls")):
+    return pd.read_excel(io.BytesIO(data))
+
+# Binary — return as data URI
+mime, _ = mimetypes.guess_type(file_name)
+data_uri = f"data:{mime or 'application/octet-stream'};base64,{base64.b64encode(data).decode()}"
+return pd.DataFrame([{"file": file_name, "size_kb": round(len(data)/1024, 1), "data_uri": data_uri}])
+```
+
+Use `data_uri` in the widget as `<img src>`, `<video src>`, or `<embed src>`. For very large files fall back to `fd://` staging + `fused.api.sign_url()`.
+
+### Upload a file to Google Drive from a URL
+
+```python
+@fused.udf
+def udf(url: str = "https://example.com/data.csv", folder_id: str = "root"):
+    import urllib.request, requests
+    file_name = url.split("?")[0].rstrip("/").split("/")[-1] or "upload.csv"
+    with urllib.request.urlopen(url) as resp:
+        data = resp.read()
+    api = fused.api.api
+    creds = api.AUTHORIZATION.credentials
+    r = requests.put(
+        f"{api.OPTIONS.base_url}/files/upload",
+        params={"path": f"gdrive://{folder_id}/{file_name}"},
+        data=data,
+        headers={
+            "Authorization": f"Bearer {creds.access_token}",
+            "Content-Type": "application/octet-stream",
+        },
+    )
+    r.raise_for_status()
+```
+
+A 401 response means credentials belong to a different user — make a copy of the canvas.
+
+### Parse fused.api.list() results
+
+```python
+items = fused.api.list("gdrive://root/")
+for item in items:
+    stripped = item.replace("gdrive://", "").rstrip("/")
+    item_id, item_name = stripped.split("/", 1)
+    is_dir = item.endswith("/")
+```
 
 ---
 
@@ -169,6 +268,16 @@ def udf():
         print(base["id"], base["name"])
 ```
 
+### List tables in a base
+
+```python
+@fused.udf()
+def udf():
+    at = fused.api.airtable_connect(base_id="appXXXXXXXXXXXXXX")
+    for table in at.list_tables():
+        print(table["id"], table["name"])
+```
+
 ### Read records
 
 ```python
@@ -184,6 +293,16 @@ def udf():
     )
     rows = [{"id": r["id"], **r["fields"]} for r in records]
     return pd.DataFrame(rows)
+```
+
+### Get a single record
+
+```python
+@fused.udf()
+def udf():
+    at = fused.api.airtable_connect(base_id="appXXXXXXXXXXXXXX")
+    record = at.get_record("Tasks", "recXXXXXXXXXXXXXX")
+    print(record["fields"])
 ```
 
 ### Create records
@@ -220,7 +339,7 @@ def udf():
     at.delete_records("Tasks", ["recAAAAAAAAAAAA", "recBBBBBBBBBBBB"])
 ```
 
-**Connection methods:** `.list_bases()`, `.list_records(table, view=, filterByFormula=, maxRecords=)`, `.create_records(table, rows)`, `.update_records(table, rows)`, `.delete_records(table, ids)`
+**Connection methods:** `.list_bases()`, `.list_tables()`, `.list_records(table, view=, filterByFormula=, maxRecords=)`, `.get_record(table, record_id)`, `.create_records(table, rows)`, `.update_records(table, rows)`, `.delete_records(table, ids)`
 
 ---
 

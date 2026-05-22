@@ -30,6 +30,32 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 - `style` is always a CSS string (`"padding: 8px; color: red"`), not an object.
 - Charts default `barColor`/`lineColor` to Fused lime yellow (`#E8FF59`).
 
+## Known gotchas
+
+### `transformer` — method must be a callable function expression
+The `method` prop must be a no-argument arrow function string, not a bare expression:
+```json
+"method": "() => { const p = Number($my_param); if (p <= 100) return 'Low'; return 'High'; }"
+```
+- Always use `Number($param)` (not bare `$param`) to coerce a canvas param to a number inside the function body.
+- The function must explicitly `return` a value.
+- `transformer` can be nested inside a `div` container alongside its controlling input widget and a display widget — useful to group all three in one canvas node.
+
+### `sql-runner` — row limit
+`sql-runner` defaults to a low row limit. Use the `maxRows` prop to increase it for data-heavy queries:
+```json
+{ "type": "sql-runner", "props": { "sql": "...", "name": "my_result", "maxRows": 10000 } }
+```
+
+### Canvas `$param` in typed SQL comparisons
+When a canvas `$param` is substituted into a SQL comparison against a typed column, the param may arrive as an empty string before the input widget initializes, causing a type cast error. Wrap with `COALESCE(TRY_CAST(...))`:
+```sql
+WHERE my_col >= COALESCE(TRY_CAST($my_param AS INTEGER), 0)
+```
+
+### `form` — top-level `param` bundles all children into one JSON object
+If `form` has a top-level `"param"`, all child values are broadcast as a single JSON object. Remove the top-level `param` so each child broadcasts individually as its own canvas param.
+
 ## How to use this skill
 
 1. Open `reference.md` and find the section for the widget `type` you're working with.

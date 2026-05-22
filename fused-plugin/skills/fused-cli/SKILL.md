@@ -160,3 +160,5 @@ Use this to introspect parameters before calling `fused run` with `--<param>=<va
 - Run `fused <command> --help` to confirm flags before scripting — this reference may lag the CLI.
 - When appropriate, give the user the URL to the created canvas so they can open it in their browser and see the result.
 - **Prefer the CLI for debugging.** Before asking the user to open the canvas UI to check a change, try to reproduce locally: `fused run` for UDFs, `fused json-ui validate` / `run-shared-widget` for widgets, `fused canvas pull --dry-run` to inspect what changed remotely. This catches most issues without a round trip.
+- **`canvas pull --show-diff` fails on Windows** with `UnicodeEncodeError` (cp1252 console encoding can't handle diff control characters). Omit `--show-diff` on Windows and read the updated files manually after the pull instead.
+- **Use PowerShell for `canvas push/pull` on Windows**, not Bash/Git Bash. Bash treats `C:\path\to\dir` as a relative POSIX path and mangles it into `C:pathtoddir`. Always `Set-Location` to the canvas directory first, then run `fused canvas push .` or `fused canvas pull ... -o .`.
