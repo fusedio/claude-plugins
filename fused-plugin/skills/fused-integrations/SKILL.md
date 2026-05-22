@@ -1,13 +1,13 @@
 ---
 name: fused-integrations
-description: Reference for using Fused's built-in integration connections inside UDFs. Covers Snowflake, BigQuery, GCS, S3, Airtable, Notion, and Google Drive — the fused.api connect helpers, secrets access, and common operations (query, write, list). Use when the user is writing a UDF that reads from or writes to a connected data source.
+description: Reference for using Fused's built-in integration connections inside UDFs. Covers data sources (Snowflake, BigQuery, GCS, S3, Airtable, Notion, Google Drive), compute/inference providers (Modal, Hugging Face, Baseten, Daytona, ComfyOrg, Slack), and LLM providers (Anthropic, OpenAI) — the fused.api connect helpers, secrets access, and common operations (query, write, list, invoke, infer). Use when the user is writing a UDF that reads from, writes to, or calls out to a connected service.
 ---
 
 # Fused Integrations
 
 Once an integration is configured (via the Workbench → Integrations UI or `fused integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
 
-Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `slack` (experimental).
+Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `modal`, `huggingface`, `baseten`, `daytona`, `comfy`, `anthropic`, `openai`, `slack` (experimental).
 
 ---
 
@@ -268,16 +268,6 @@ def udf():
         print(base["id"], base["name"])
 ```
 
-### List tables in a base
-
-```python
-@fused.udf()
-def udf():
-    at = fused.api.airtable_connect(base_id="appXXXXXXXXXXXXXX")
-    for table in at.list_tables():
-        print(table["id"], table["name"])
-```
-
 ### Read records
 
 ```python
@@ -293,16 +283,6 @@ def udf():
     )
     rows = [{"id": r["id"], **r["fields"]} for r in records]
     return pd.DataFrame(rows)
-```
-
-### Get a single record
-
-```python
-@fused.udf()
-def udf():
-    at = fused.api.airtable_connect(base_id="appXXXXXXXXXXXXXX")
-    record = at.get_record("Tasks", "recXXXXXXXXXXXXXX")
-    print(record["fields"])
 ```
 
 ### Create records
@@ -339,7 +319,7 @@ def udf():
     at.delete_records("Tasks", ["recAAAAAAAAAAAA", "recBBBBBBBBBBBB"])
 ```
 
-**Connection methods:** `.list_bases()`, `.list_tables()`, `.list_records(table, view=, filterByFormula=, maxRecords=)`, `.get_record(table, record_id)`, `.create_records(table, rows)`, `.update_records(table, rows)`, `.delete_records(table, ids)`
+**Connection methods:** `.list_bases()`, `.list_records(table, view=, filterByFormula=, maxRecords=)`, `.create_records(table, rows)`, `.update_records(table, rows)`, `.delete_records(table, ids)`
 
 ---
 
@@ -347,7 +327,15 @@ def udf():
 
 Docs: https://docs.fused.io/workbench/integrations/notion
 
-All operations go through `fused.api.notion_connect()`, which returns a thin wrapper. Call `.client()` to get a full `notion-client` SDK instance.
+All operations go through `fused.api.notion_connect()`, which returns a thin wrapper. Call `.client()` to get a full `notion-client` SDK instance — `nt` itself does not expose search/create/etc. directly.
+
+> **Access grant required.** If you get `APIResponseError: Could not find page`, the Notion integration hasn't been granted access to that page or database. Fix: Workbench → Integrations → Notion → reconnect and grant access to all relevant pages/databases. This is separate from the OAuth connect step.
+
+> **Notion URL parsing.** URLs copied from Notion often include a query string and block anchor: `https://www.notion.so/workspace/Page-abc123?v=uuid&source=copy_link#blockanchor`. The `#blockanchor` is 32 hex chars and will match a page-ID regex if not stripped first. Always clean the URL before extracting the ID:
+> ```python
+> clean = url.split("#")[0].split("?")[0].rstrip("/")
+> slug = clean.split("/")[-1]
+> ```
 
 ### Search pages
 
@@ -376,14 +364,22 @@ def udf():
 
 ### Query a database
 
+> **⚠ `client.databases.query()` is not available in the Fused Notion client.** Calling it raises `AttributeError: 'DatabasesEndpoint' object has no attribute 'query'`. Use `client.search()` with a page filter instead:
+
 ```python
 @fused.udf()
 def udf():
     nt = fused.api.notion_connect()
     client = nt.client()
-    response = client.databases.query(database_id="your-database-id")
-    for page in response["results"]:
-        print(page["id"], page["properties"])
+    # Search within a specific database by filtering on the database ID via parent
+    results = client.search(
+        query="",
+        filter={"property": "object", "value": "page"},
+    )
+    for r in results.get("results", []):
+        # Check parent to scope to a specific database
+        if r.get("parent", {}).get("database_id") == "your-database-id":
+            print(r["id"], r["properties"])
 ```
 
 ### Create a page in a database
@@ -401,6 +397,42 @@ def udf():
         },
     )
 ```
+
+### Create a page with formatted bullet-point content
+
+Pass `children` as a list of block dicts. Use `bulleted_list_item` blocks (not a single `paragraph` with `\n`) so content renders as actual bullets. Use `annotations` for bold labels:
+
+```python
+@fused.udf()
+def udf():
+    nt = fused.api.notion_connect()
+    client = nt.client()
+
+    def bullet(label, text):
+        return {
+            "object": "block",
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {
+                "rich_text": [
+                    {"type": "text", "text": {"content": label}, "annotations": {"bold": True}},
+                    {"type": "text", "text": {"content": " " + text}},
+                ]
+            },
+        }
+
+    client.pages.create(
+        parent={"database_id": "your-database-id"},
+        properties={
+            "Name": {"title": [{"text": {"content": "My ticket"}}]},
+        },
+        children=[
+            bullet("What:", "The widget fails on empty datasets."),
+            bullet("Fix:", "Add a null-check before rendering."),
+        ],
+    )
+```
+
+> **Note:** Putting formatted content in a single `paragraph` block with `\n` separators renders `**bold**` as literal asterisks. Always use separate block types.
 
 ### Pull all pages into a DataFrame
 
@@ -422,6 +454,527 @@ def udf():
 
 ---
 
+## Modal
+
+Docs: https://docs.fused.io/workbench/integrations/modal
+
+Run Modal apps, functions, and serverless GPU workloads. Set `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` in **Settings > Integrations & Secrets**. `fused.api.modal_connect()` returns an authenticated `modal.Client` and configures the SDK for the current process — subsequent `modal.Function.from_name(...).remote(...)` calls authenticate automatically.
+
+### Invoke a deployed function
+
+```python
+@fused.udf()
+def udf(prompt: str = "A high-resolution satellite image of a coastline"):
+    import modal
+    fused.api.modal_connect()
+    generate = modal.Function.from_name("image-gen", "generate")
+    return generate.remote(prompt)
+```
+
+### Fan out with `.map()`
+
+```python
+@fused.udf()
+def udf():
+    import modal, pandas as pd
+    fused.api.modal_connect()
+    embed = modal.Function.from_name("embeddings", "embed")
+    texts = ["hello", "world", "fused", "modal"]
+    vectors = list(embed.map(texts))
+    return pd.DataFrame({"text": texts, "embedding": vectors})
+```
+
+### Class-based service
+
+```python
+fused.api.modal_connect()
+Model = modal.Cls.from_name("llm-app", "Llama")
+model = Model()
+return model.complete.remote("Explain GeoParquet in one paragraph.")
+```
+
+### Async (spawn + poll)
+
+```python
+call = train.spawn(epochs=10)
+# Later UDF: modal.FunctionCall.from_id(call.object_id).get()
+```
+
+---
+
+## Hugging Face
+
+Docs: https://docs.fused.io/workbench/integrations/huggingface
+
+Token stored as `HUGGINGFACE_API_KEY`. Two helpers, both pre-authenticated:
+
+- `fused.api.huggingface_connect()` → `HfApi` (repos, models, datasets, files, Spaces)
+- `fused.api.huggingface_inference()` → `InferenceClient` (hosted chat, embeddings, text-to-image, ASR…)
+
+### Inspect / list models
+
+```python
+@fused.udf()
+def udf():
+    import pandas as pd
+    hf = fused.api.huggingface_connect()
+    models = hf.list_models(author="meta-llama", limit=20)
+    return pd.DataFrame([{"id": m.id, "downloads": m.downloads, "likes": m.likes} for m in models])
+```
+
+### Download a file from a repo
+
+```python
+from huggingface_hub import hf_hub_download
+fused.api.huggingface_connect()  # configures token
+path = hf_hub_download(repo_id="meta-llama/Llama-3.2-1B-Instruct", filename="config.json")
+```
+
+### Load a dataset
+
+```python
+from datasets import load_dataset
+fused.api.huggingface_connect()
+ds = load_dataset("squad", split="validation[:100]")
+return ds.to_pandas()
+```
+
+### Chat completion (hosted inference)
+
+```python
+client = fused.api.huggingface_inference()
+reply = client.chat_completion(
+    model="meta-llama/Llama-3.2-3B-Instruct",
+    messages=[{"role": "user", "content": question}],
+    max_tokens=256,
+)
+return reply.choices[0].message.content
+```
+
+### Embeddings
+
+```python
+client = fused.api.huggingface_inference()
+vec = client.feature_extraction("coastal erosion", model="sentence-transformers/all-MiniLM-L6-v2")
+```
+
+### Text-to-image
+
+```python
+client = fused.api.huggingface_inference()
+image = client.text_to_image(prompt, model="black-forest-labs/FLUX.1-schnell")  # PIL.Image
+```
+
+### Push to a repo
+
+```python
+hf = fused.api.huggingface_connect()
+hf.upload_file(
+    path_or_fileobj="results.parquet",
+    path_in_repo="results.parquet",
+    repo_id="my-org/my-dataset",
+    repo_type="dataset",
+)
+```
+
+---
+
+## Baseten
+
+Docs: https://docs.fused.io/workbench/integrations/baseten
+
+API key stored as `BASETEN_API_KEY`. No connect helper — Baseten exposes an **OpenAI-compatible** endpoint at `https://inference.baseten.co/v1`, so use the `openai` SDK (pre-installed in the runtime).
+
+### Chat completion
+
+```python
+@fused.udf()
+def udf(prompt: str = "Summarize what GeoParquet is in one sentence."):
+    from openai import OpenAI
+    client = OpenAI(
+        api_key=fused.secrets["BASETEN_API_KEY"],
+        base_url="https://inference.baseten.co/v1",
+    )
+    response = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V3.1",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=256,
+    )
+    return response.choices[0].message.content
+```
+
+### Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="deepseek-ai/DeepSeek-V3.1",
+    messages=[{"role": "user", "content": "Write a haiku about S3."}],
+    stream=True,
+)
+return "".join(chunk.choices[0].delta.content or "" for chunk in stream)
+```
+
+### Dedicated model deployment
+
+For models deployed to your own Baseten workspace, call the model-specific endpoint with an `Api-Key` header:
+
+```python
+import requests
+api_key = fused.secrets["BASETEN_API_KEY"]
+resp = requests.post(
+    f"https://model-{model_id}.api.baseten.co/production/predict",
+    headers={"Authorization": f"Api-Key {api_key}"},
+    json={"prompt": "Hello, world!"},
+    timeout=60,
+)
+resp.raise_for_status()
+return resp.json()
+```
+
+---
+
+## Daytona
+
+Docs: https://docs.fused.io/workbench/integrations/daytona
+
+Run untrusted code, manage files, and clone repositories in cloud sandboxes. API key stored as `DAYTONA_API_KEY`. `fused.api.daytona_connect()` returns an authenticated `Daytona` client.
+
+> **Always clean up sandboxes.** Wrap usage in `try/finally` with `daytona.delete(sandbox)` — orphaned sandboxes keep running and accrue cost.
+
+### Create a sandbox and run code
+
+```python
+@fused.udf()
+def udf():
+    daytona = fused.api.daytona_connect()
+    sandbox = daytona.create()
+    try:
+        response = sandbox.process.code_run('import math; print(f"{math.pi:.10f}")')
+        return response.result
+    finally:
+        daytona.delete(sandbox)
+```
+
+### Stateful execution (variables persist)
+
+```python
+sandbox.code_interpreter.run_code("data = [1, 2, 3, 4, 5]")
+result = sandbox.code_interpreter.run_code("print(sum(data))")  # 15
+```
+
+### Upload / download files
+
+```python
+sandbox.fs.upload_file("/home/daytona/input.txt", b"Hello, world!")
+content = sandbox.fs.download_file("/home/daytona/input.txt")
+```
+
+### Clone a Git repo
+
+```python
+sandbox.git.clone(url="https://github.com/fusedio/udfs", path="/home/daytona/udfs")
+```
+
+### Custom configuration
+
+```python
+from daytona import CreateSandboxFromSnapshotParams
+params = CreateSandboxFromSnapshotParams(
+    language="python",
+    env_vars={"DEBUG": "true"},
+    auto_stop_interval=0,
+)
+sandbox = daytona.create(params, timeout=40)
+```
+
+**Client methods:** `.create(params=, timeout=)`, `.get(sandbox_id)`, `.list()`, `.delete(sandbox)`
+**Sandbox surfaces:** `.process.code_run(code)`, `.code_interpreter.run_code(code)`, `.fs.upload_file/.download_file`, `.git.clone(url=, path=)`
+
+---
+
+## ComfyOrg (Comfy Cloud)
+
+Docs: https://docs.fused.io/workbench/integrations/comfy
+
+Run [ComfyUI](https://www.comfy.org) workflows on Comfy Cloud. API key stored as `COMFY_API_KEY`. There is **no connect helper** — call the REST API at `https://cloud.comfy.org` directly.
+
+Prerequisite: export your workflow as JSON via **Graph → Export (API)** in ComfyUI and upload it somewhere Fused can read (typically S3).
+
+The flow is: load workflow → patch input nodes → `POST /api/prompt` → poll `/api/job/{id}/status` → download from `/api/view`.
+
+```python
+@fused.udf()
+def udf(prompt: str = "A high-resolution satellite image of a coastline"):
+    import io, time, requests, numpy as np
+    from PIL import Image
+
+    BASE_URL = "https://cloud.comfy.org"
+    api_key = fused.secrets["COMFY_API_KEY"]
+    headers = {"X-API-Key": api_key}
+
+    # 1. Load workflow JSON from S3
+    workflow = requests.get(fused.api.sign_url("s3://your-bucket/workflow.json")).json()
+
+    # 2. Patch input nodes — node IDs are top-level keys in the exported JSON
+    workflow["104:90"]["inputs"]["text"] = prompt
+    workflow["104:92"]["inputs"]["seed"] = 42
+
+    # 3. Submit
+    prompt_id = requests.post(
+        f"{BASE_URL}/api/prompt",
+        headers={**headers, "Content-Type": "application/json"},
+        json={"prompt": workflow, "extra_data": {"api_key_comfy_org": api_key}},
+    ).json()["prompt_id"]
+
+    # 4. Poll
+    history = {}
+    for _ in range(120):
+        job = requests.get(f"{BASE_URL}/api/job/{prompt_id}/status", headers=headers).json()
+        if job.get("status") in ("failed", "cancelled", "error"):
+            raise RuntimeError(f"Comfy job failed: {job.get('error_message')}")
+        if job.get("status") in ("success", "completed"):
+            history = requests.get(f"{BASE_URL}/api/history_v2/{prompt_id}", headers=headers).json().get(prompt_id, {})
+            break
+        time.sleep(5)
+
+    # 5. Download first output image
+    for node_outputs in history.get("outputs", {}).values():
+        for file_info in node_outputs.get("images", []):
+            data = requests.get(
+                f"{BASE_URL}/api/view",
+                headers=headers,
+                params={"filename": file_info["filename"], "type": file_info.get("type", "output")},
+            ).content
+            return np.array(Image.open(io.BytesIO(data)))
+```
+
+> **Node IDs are workflow-specific.** Keys like `"104:90"` come from one particular exported workflow — open your own JSON and look up the actual top-level keys for the nodes you want to patch.
+
+### Upload an input image
+
+For image-to-video or style-transfer workflows, upload the input first and reference its returned filename:
+
+```python
+resp = requests.post(
+    f"{BASE_URL}/api/upload/image",
+    headers={"X-API-Key": fused.secrets["COMFY_API_KEY"]},
+    files={"image": (fname, img_bytes, "image/png")},
+)
+uploaded_name = resp.json()["name"]
+workflow["3"]["inputs"]["image"] = uploaded_name
+```
+
+### Cache the slow job, wrap with a thin UDF
+
+Generation is expensive — split the work: a `@fused.cache` helper that submits/polls/uploads to S3, and a thin `@fused.udf(engine="small")` wrapper that returns a `fused.api.sign_url(...)`. `engine="small"` runs as a batch job so you escape the 120-second realtime UDF limit (often necessary for video).
+
+---
+
+## Anthropic
+
+Docs: https://docs.anthropic.com/en/api/client-sdks/python
+
+API key stored as `ANTHROPIC_API_KEY`. `fused.api.anthropic_connect()` returns an authenticated `anthropic.Anthropic` client — the full SDK surface is available (`client.messages`, `client.models`, `client.beta`).
+
+### Chat completion
+
+```python
+@fused.udf()
+def udf(question: str = "Explain map projections in three sentences."):
+    client = fused.api.anthropic_connect()
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": question}],
+    )
+    return message.content[0].text
+```
+
+### System prompt
+
+```python
+client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    system="You are a geospatial data expert. Answer concisely.",
+    messages=[{"role": "user", "content": question}],
+)
+```
+
+### Streaming
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a Haversine function."}],
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+### Tool use
+
+```python
+tools = [{
+    "name": "get_weather",
+    "description": "Get the current weather for a location.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"latitude": {"type": "number"}, "longitude": {"type": "number"}},
+        "required": ["latitude", "longitude"],
+    },
+}]
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
+)
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name, block.input)
+```
+
+### Vision (base64 image)
+
+```python
+import base64
+with open("satellite.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode()
+client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_data}},
+            {"type": "text", "text": "Describe the land use patterns."},
+        ],
+    }],
+)
+```
+
+> **Anthropic image format differs from OpenAI.** Anthropic uses `{"type": "image", "source": {"type": "base64", "media_type": ..., "data": ...}}`. OpenAI uses `{"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}`. Don't swap them.
+
+Token usage is on `message.usage.input_tokens` / `message.usage.output_tokens`.
+
+---
+
+## OpenAI
+
+Docs: https://platform.openai.com/docs/libraries/python
+
+API key stored as `OPENAI_API_KEY`. `fused.api.openai_connect()` returns an authenticated `openai.OpenAI` client — the full SDK surface is available (`client.chat.completions`, `client.embeddings`, `client.images`, `client.models`).
+
+### Chat completion
+
+```python
+@fused.udf()
+def udf(question: str = "Summarize GeoParquet's key features."):
+    client = fused.api.openai_connect()
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}],
+    )
+    return response.choices[0].message.content
+```
+
+### System prompt
+
+```python
+client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a geospatial data expert. Answer concisely."},
+        {"role": "user", "content": question},
+    ],
+)
+```
+
+### Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a Haversine function."}],
+    stream=True,
+)
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+
+### Function calling
+
+```python
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get the current weather for a location.",
+        "parameters": {
+            "type": "object",
+            "properties": {"latitude": {"type": "number"}, "longitude": {"type": "number"}},
+            "required": ["latitude", "longitude"],
+        },
+    },
+}]
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What's the weather in San Francisco?"}],
+    tools=tools,
+)
+for tc in response.choices[0].message.tool_calls or []:
+    print(tc.function.name, tc.function.arguments)  # arguments is a JSON string — json.loads it
+```
+
+### Vision (data URI)
+
+```python
+import base64
+with open("satellite.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode()
+client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_data}"}},
+            {"type": "text", "text": "Describe the land use patterns."},
+        ],
+    }],
+)
+```
+
+### Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=["geospatial data processing", "satellite imagery analysis"],
+)
+vectors = [d.embedding for d in response.data]
+```
+
+Token usage is on `response.usage.prompt_tokens` / `response.usage.completion_tokens` (note: different names than Anthropic).
+
+---
+
+## Slack (Experimental)
+
+Docs: https://docs.fused.io/workbench/integrations/slack
+
+Slack integration is a **team-level Slack bot for talking to a Canvas** — it is not a UDF-level helper. Enable it in **Preferences → Slack integration**, then check the **Integrations** panel on your Fused home page:
+
+- **SYNCED** — your team is set up. Go straight to *Adding a new Canvas to Slack* in the docs.
+- **STANDBY** — run the one-time team setup (Loom walkthrough in the docs).
+
+There is no `fused.api.slack_connect()` and no `SLACK_*` secret in UDFs — wiring happens at the team/canvas level, not in code.
+
+---
+
 ## Secrets (generic key/value)
 
 Any secret stored via `fused secrets set KEY VALUE` (or the Workbench UI) is available as `fused.secrets["KEY"]` inside any UDF. Use this for API keys, tokens, or JSON credential blobs that don't have a first-class connect helper.
@@ -431,3 +984,5 @@ Any secret stored via `fused secrets set KEY VALUE` (or the Workbench UI) is ava
 def udf():
     api_key = fused.secrets["my_api_key"]
 ```
+
+> **`fused.secrets` raises on missing keys.** Accessing a key that doesn't exist raises `SecretKeyNotFound`, not `KeyError` and not `None`. Run `fused secrets list` to verify a key exists before relying on it in a UDF.

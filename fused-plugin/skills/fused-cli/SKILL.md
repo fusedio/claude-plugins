@@ -5,7 +5,25 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 # Fused CLI
 
-Run `fused` directly, or `uv run fused` if it's installed in a project venv. Global flags:
+## Finding the CLI
+
+`fused` is installed as part of the `fused` Python package. The CLI ships in `fused>=2`, which requires **Python 3.10 or newer** — on Python 3.9 `pip install fused` falls back to a 1.x release that has no `fused` entry point. If `fused` is not on `PATH`, locate or install it before running any commands:
+
+1. **Check PATH first:** `which fused` — if found, use it directly.
+2. **No virtual environment detected? Use uvx (recommended):** `uvx fused` — runs the latest version without installation and selects a compatible Python automatically, so it works even when the system Python is 3.9.
+3. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`. Confirm the venv is Python 3.10+ (`.venv/bin/python --version`); if it's 3.9, recreate it with `uv venv --python 3.11 .venv` before installing.
+4. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path. If the env is on Python 3.9, create a new one with `conda create -n fused python=3.11`.
+5. **Fresh install (when uvx isn't available):**
+   ```bash
+   uv venv --python 3.11 ~/.fused-cli-env
+   uv pip install 'fused>=2' --python ~/.fused-cli-env/bin/python
+   # then call ~/.fused-cli-env/bin/fused
+   ```
+   Pinning `--python 3.11` and `'fused>=2'` avoids the silent 1.x fallback. Save the full path for future use so the same env is reused.
+
+Always confirm the CLI is working with `fused whoami` before proceeding. If `fused: command not found` appears right after a `pip install fused`, check `python --version` — Python 3.9 or older is the most common cause and is fixed by switching to `uvx` or installing into a 3.10+ environment.
+
+## Global flags
 
 - `--env TEXT` (env: `FUSED_ENV`)
 - `--format [json|text]` (env: `FUSED_CLI_FORMAT`) — set to `json` for machine-readable output
@@ -40,13 +58,45 @@ Most canvas subcommands take a `CANVAS_REF` (name or ID) plus:
 | `export CANVAS_REF` | `--output FILE` (required), `--team`, `--id` — downloads a zip bundle |
 | `list [CANVAS_REF]` | `--team`, `--id` — lists all, or shows one |
 | `pull CANVAS_REF` | `-o/--output DIR`, `--team`, `--id`, `-f/--force`, `-n/--dry-run`, `--show-diff` — same as `export` then extracts; prompts per file on conflict unless `--force`. Pass `--show-diff` (recommended when invoked by an AI assistant) to print a unified diff for every file write or removal so you can summarize the change set back to the user. The changes will be applied with `--show-diff`. |
-| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed. If no canvas with that name exists, a new one is created |
+| `push SOURCE_DIR` | `--canvas TEXT` (defaults to dir name), `--id`. Replaces remote UDF list — UDFs missing locally are removed. If no canvas with that name exists, a new one is created. **Canvas names must match `[a-zA-Z0-9_]` — no spaces or hyphens.** |
 | `rename CANVAS_REF NEW_NAME` | `--id` |
 | `share CANVAS_REF` | `--client-id TEXT`, `--new-token`, `--id` |
 | `unshare CANVAS_REF` | `--id` |
 | `serve-mcp CANVAS_REF` | `--token` (treat ref as `fc_…` share token), `--team`, `--id`, `--host TEXT` (default `127.0.0.1`), `--port INTEGER` (default `8765`), `--path TEXT` (default `/mcp`), `--claude` (register with Claude Code via `claude` CLI) — serves the shared canvas's OpenAPI as a local MCP server. The canvas must be shared first (`fused canvas share <ref>`) |
 
 - When pushing a canvas, prefer to test the canvas to make sure your changes work. For JSON UI nodes, you can run using `fused json-ui run-inline-widget`/`fused json-ui run-shared-widget`, for UDFs, you can run them using `fused run`.
+
+**Directory name ≠ canvas name.** By default `push` uses the source directory's name as the canvas name. If your local folder is named differently from the remote canvas (e.g. folder is `fused-canvas/`, remote canvas is `feedback_pipeline`), the push will try to create a new canvas with the folder's name — and fail if that name contains hyphens. Always pass `--canvas` explicitly when the names differ:
+
+```bash
+# Push ./fused-canvas/ to the existing canvas named "feedback_pipeline"
+fused canvas push ./fused-canvas --canvas feedback_pipeline
+```
+
+If you're unsure of the remote canvas name, run `fused canvas list` first.
+
+## Reading an existing canvas
+
+To understand what a canvas contains, pull it locally first, then read the files:
+
+```bash
+fused canvas pull CANVAS_REF -o ./local_canvas
+```
+
+Once pulled, the output directory contains:
+- `canvas.toml` — nodes, edges, viewport (see the `fused:canvas-toml` skill for the full format)
+- `*.py` / `*.json` / `*.md` / `*.html` — one source file per UDF node
+
+To inspect a single UDF's parameters without pulling the full canvas, use `fused udf-schema CANVAS UDF`.
+
+### Anti-patterns
+
+| Avoid | Why | Instead |
+| --- | --- | --- |
+| `fused canvas export` to inspect a canvas | Downloads a zip that needs manual extraction | `fused canvas pull -o ./dir` extracts automatically |
+| `fused canvas pull --dry-run` then reading local files | `--dry-run` prints what would be created/updated/removed but writes nothing to disk | Omit `--dry-run` when you need to read files locally |
+| Running `fused run` on each UDF to understand what it does | Executes UDFs remotely — slow and consumes compute | Read the `.py` source files after pulling |
+| `fused canvas list` to see canvas structure | Only shows metadata (name, ID) — not nodes or UDF content | Pull the canvas and read `canvas.toml` |
 
 ## `fused files`
 
@@ -116,6 +166,52 @@ Manage Fused for Claude Code via the `claude` CLI.
 | `install` | `--shell [auto\|bash\|zsh\|fish]`, `--dry-run`, `-y/--yes` — append a one-liner to `~/.bashrc`/`~/.zshrc` or write fish's completion file |
 | `print {bash\|zsh\|fish}` | Print a completion script suitable for `eval` or fish's completions dir |
 
+## Calling UDFs: HTTP vs `fused run`
+
+Use this to decide which approach to suggest:
+
+| | `fused run` | HTTP API |
+| --- | --- | --- |
+| **When to use** | Local development, testing, debugging | External integrations, bots, callers without Fused credentials |
+| **Canvas must be shared?** | No — works on private canvases | Yes — `fused canvas share` must be run first |
+| **Auth required?** | Yes — must be authenticated as the canvas owner | No — share token in the URL is sufficient |
+| **Caller environment** | Anywhere `fused` CLI is installed | Any HTTP client (curl, browser, another service) |
+
+**Default to `fused run` during development.** Only suggest HTTP when the goal is an external caller or a production integration that runs without Fused credentials. Never suggest an HTTP call on a canvas that hasn't been shared — it will return 404 or 403.
+
+## Calling UDFs via HTTP
+
+Every shared canvas exposes a public HTTP API — no Fused SDK or credentials required on the caller side. This is the foundation for building bots, external integrations, and any service that calls Fused from outside Python.
+
+### HTTP API URL format
+
+Once the canvas is public, each UDF is callable as:
+
+```
+GET https://udf.ai/<share_token>/<udf_name>?param1=value1&param2=value2&format=json
+```
+
+- `format=json` returns a JSON array of row objects (one per DataFrame row). Omitting it returns a binary format.
+- Parameters are passed as query string values — strings, integers, and booleans all work.
+
+**Example:**
+```bash
+curl "https://udf.ai/fc_abc123/ask_question?question=what+is+fused&format=json"
+# → [{"answer": "Fused is a platform for running Python in the cloud..."}]
+```
+
+### Discover available UDFs
+
+The `.api.json` endpoint returns an OpenAPI spec listing all UDFs in the canvas and their parameters:
+
+```bash
+curl "https://udf.ai/<share_token>.api.json"
+```
+
+Use this to build tool lists for LLM agents — the `summary` field in each path is the UDF's docstring, which the canvas bot uses as the tool description.
+
+---
+
 ## `fused run CANVAS UDF`
 
 Runs a UDF and prints the result. The `UDF` argument is passed to `fused.load`, which accepts:
@@ -136,7 +232,21 @@ Options:
 - `--stdin` — read UDF source from stdin instead of passing `UDF` (do not pass `UDF` with `--stdin`)
 - `--verbose / --no-verbose` — show UDF stdout/stderr (default on)
 
+> **`--with pandas` required for local result deserialization.** When running via `uv run`, the result DataFrame is deserialized locally and requires `pandas` to be available in that environment. Without it you get `ModuleNotFoundError: No module named 'pandas'` even if the UDF itself doesn't use pandas. Always add `--with pandas`:
+>
+> ```bash
+> uv run --no-project --with fused --with pandas fused run my_canvas my_udf --param=value
+> ```
+>
+> `--no-project` avoids pulling in the current directory's dependencies, which can conflict with fused's requirements.
+
 Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's signature**, e.g. `--abc=123` is forwarded as the `abc` parameter to the UDF. These pass-through args are not listed in `--help`.
+
+When running locally via `uv run`, include `--with pandas` if the UDF returns a DataFrame — the CLI needs pandas to deserialize the result, and the error (`ModuleNotFoundError: No module named 'pandas'`) appears at result-read time, not inside the UDF itself:
+
+```bash
+uv run --with fused --with pandas fused run my_canvas my_udf --param=value
+```
 
 ## `fused udf-schema CANVAS UDF`
 
