@@ -108,6 +108,11 @@ Widgets render inside containers with dynamic height. Flex properties (`flex:1`,
 
 Without `height:400px` on the parent `div`, `flex:1` on the chart has nothing to fill and the chart collapses.
 
+## Known gotchas
+
+### `form` — top-level `param` bundles all children into one JSON object
+If `form` has a top-level `"param"`, all child values are broadcast as a single JSON object. Remove the top-level `param` so each child broadcasts individually as its own canvas param.
+
 ## How to use this skill
 
 1. Open `reference.md` and find the section for the widget `type` you're working with.
