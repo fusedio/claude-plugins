@@ -13,6 +13,60 @@ The authoritative reference to JSON schema is available from the CLI. There is a
 
 JSON UI files are in JSON5 format, which may have trailing commas, comments, etc.
 
+## Widget node structure
+
+Every widget in a JSON UI file follows this envelope:
+
+```json
+{
+  "type": "<widget-type>",
+  "props": {
+    /* ALL component properties go here: value, sql, param, style, label, chart options, etc. */
+  },
+  "children": [
+    /* child widget nodes — only valid for container types: div, form, sql-runner */
+  ]
+}
+```
+
+**Critical rules:**
+- ALL component properties (`value`, `sql`, `param`, `style`, `label`, chart options, etc.) MUST be nested under `"props"`. Never place them directly on the node object.
+- `"children"` is an array of widget nodes. Only container types (`div`, `form`, `sql-runner`) accept children. Omit it for leaf widgets.
+- The top-level JSON UI file is itself a widget node (typically a root `div`).
+
+**Minimal correct example:**
+
+```json
+{
+  "type": "div",
+  "props": { "style": "display:flex;flex-direction:column;gap:16px;padding:20px" },
+  "children": [
+    {
+      "type": "text",
+      "props": { "value": "Hello World", "variant": "h2", "style": "color:#fff" }
+    },
+    {
+      "type": "dropdown",
+      "props": {
+        "label": "City",
+        "param": "city",
+        "sql": "SELECT city AS value, city AS label FROM {{my_udf}} ORDER BY 1",
+        "nullable": true
+      }
+    }
+  ]
+}
+```
+
+**Common mistake — WRONG:**
+```json
+{ "type": "text", "value": "Hello", "style": "color:#fff" }
+```
+**Correct:**
+```json
+{ "type": "text", "props": { "value": "Hello", "style": "color:#fff" } }
+```
+
 ## Available widget types
 
 - **Layout / containers:** `div`, `form`, `sql-runner` (children: yes)
@@ -29,6 +83,30 @@ JSON UI files are in JSON5 format, which may have trailing commas, comments, etc
 - `sql` fields accept DuckDB queries with `{{udf_name}}` and `$param_name` placeholders. Required output columns vary by widget — check the schema.
 - `style` is always a CSS string (`"padding: 8px; color: red"`), not an object.
 - Charts default `barColor`/`lineColor` to Fused lime yellow (`#E8FF59`).
+
+## Layout and height gotcha
+
+Widgets render inside containers with dynamic height. Flex properties (`flex:1`, `flex-grow`, `min-height:0`, `overflow`) only work reliably when the parent has an explicit height or a complete height chain up to a sized ancestor. Without that, flex children may collapse, overflow, or expand unexpectedly.
+
+**Rule of thumb:** If a chart, table, or map inside a `div` looks collapsed or missing, set an explicit `height` or `min-height` on the parent `div` first.
+
+```json
+{
+  "type": "div",
+  "props": { "style": "display:flex;gap:16px;height:400px" },
+  "children": [
+    {
+      "type": "bar-chart",
+      "props": {
+        "sql": "SELECT label, value FROM {{my_udf}}",
+        "style": "flex:1;min-width:0"
+      }
+    }
+  ]
+}
+```
+
+Without `height:400px` on the parent `div`, `flex:1` on the chart has nothing to fill and the chart collapses.
 
 ## Known gotchas
 

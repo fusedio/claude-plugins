@@ -147,6 +147,46 @@ def udf(data_path: str):
 - Cache data loading, not business logic that changes frequently
 - Consider hierarchical caching for complex pipelines
 
+## Cache Invalidation
+
+**📖 Reference:** [Cache Invalidation](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/cache-invalidation/)
+
+Fused caches UDF results automatically. Invalidate the cache when source data changes, after fixing a UDF bug, or as part of a redeploy — otherwise callers will keep getting the stale result.
+
+### `invalidate_cache()` from Python
+
+Call `invalidate_cache()` on a loaded UDF object. With no arguments it clears every cached result for that UDF:
+
+```python
+@fused.udf
+def udf():
+    parent = fused.load("udf_to_invalidate")
+    parent.invalidate_cache()
+    return parent()
+```
+
+For Tile UDFs, pass `z`, `x`, `y` to invalidate a single tile. **All three parameters are required together** — partial tile specs are rejected:
+
+```python
+udf = fused.load("udf_to_invalidate")
+udf.invalidate_cache(z=15, x=9647, y=12320)
+```
+
+### HTTP API for external automation
+
+For CI/CD, cron jobs, or anything outside a UDF, use the REST endpoint with a service token:
+
+```
+DELETE https://www.fused.io/server/v1/realtime-shared/{client_id}/udf-cache/by-id/{udf_id}/delete
+```
+
+Get the identifiers from the SDK:
+
+- `udf_id` → `fused.load(...).metadata["fused:id"]`
+- `client_id` → `fused.options.realtime_client_id`
+
+Append `z`, `x`, `y` query params to invalidate a single tile (all three required, or the server returns 422). Store service tokens as environment variables — never inline them in code.
+
 ## Code Organization
 
 **📖 Reference:** [Storage Options](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/storage/)

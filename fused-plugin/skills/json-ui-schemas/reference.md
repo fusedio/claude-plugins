@@ -1,5 +1,7 @@
 # JSON UI component schemas
 
+> **Important:** All properties listed in each schema below go inside the `"props"` key of the widget node. The correct shape is always `{ "type": "<type>", "props": { … }, "children": […] }`. Never place component properties directly on the node object.
+
 ## ai-chat
 
 AI chat for connected UDFs.
