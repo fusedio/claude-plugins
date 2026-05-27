@@ -243,12 +243,27 @@ If dynamic file names are required, resolve and validate the full path before us
 
 **📖 Reference:** [Small UDF Run](https://docs.fused.io/core-concepts/run-udfs/run-small-udfs/), see also the `fused-cli` skill
 
-Use the CLI for rapid development and testing:
-- `fused run <canvas> <udf> --profile` - Test UDF execution and evaluate performance (prefer running with `--profile` if possible)
-- `fused json-ui validate <file>` - Validate widget configs
+**Always run the UDF after writing it** — don't stop at pushing the code. UDFs fail in ways static analysis can't catch: wrong parameter types, missing data, unexpected runtime behaviour. A passing push is not a passing test.
 
-Test UDFs locally before pushing to ensure they work correctly. When you're ready to push:
-- `fused canvas push <dir>` - Deploy changes
+```bash
+# Basic run
+fused run CANVAS_NAME udf_name
+
+# With a parameter
+fused run CANVAS_NAME udf_name --param=value
+
+# Force fresh execution (skip cache)
+fused run CANVAS_NAME udf_name --cache-max-age=0
+
+# Profile performance
+fused run CANVAS_NAME udf_name --profile
+```
+
+**What counts as passing:** any non-error return. An empty `{}` or `None` is fine if the data source isn't populated yet — what matters is no exception. If the UDF has a `date` or `id` parameter, test with a real value that should have data.
+
+**Start with a smoke test.** When writing a new UDF — especially one that connects to an external service — verify the connection returns data before building the full logic. This separates "can I connect?" from "does my logic work?", and makes failures much easier to diagnose.
+
+- `fused json-ui validate <file>` - Validate widget configs before pushing
 
 > **`fused run` always executes the deployed remote version, not your local files.** If you edit a UDF and immediately run `fused run canvas_name udf_name`, you will get the previously deployed version — the CLI prints `"UDF '...' returned cached result"` which can make this easy to miss. Always push first:
 >
