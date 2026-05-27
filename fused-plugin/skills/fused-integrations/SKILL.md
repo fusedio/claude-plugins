@@ -11,6 +11,26 @@ Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notio
 
 ---
 
+## Testing integration UDFs
+
+Integration UDFs have two failure modes general UDFs don't: missing access grants and execution-context differences between `fused run` and public shared URLs. See the `fused-udfs` skill for general testing guidance — the integration-specific additions are below.
+
+**Start with a connectivity smoke test.** Before building any logic, verify the integration actually connects and returns data:
+
+```python
+@fused.udf
+def udf():
+    # Smoke test: verify connection before writing full logic
+    nt = fused.api.notion_connect()
+    client = nt.client()
+    results = client.search(query="", filter={"value": "page", "property": "object"})
+    return {"connected": True, "pages_visible": len(results.get("results", []))}
+```
+
+**Also test via the shared URL** if the UDF will be served publicly (e.g. `https://udf.ai/fc_TOKEN/udf_name`). Some integrations — notably Notion — behave differently in that unauthenticated execution context. See the Notion section below for details.
+
+---
+
 ## Google Drive
 
 Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.
@@ -454,6 +474,62 @@ def udf():
         title = "".join(t["plain_text"] for t in title_parts)
         rows.append({"id": p["id"], "title": title, "url": p.get("url"), "last_edited": p.get("last_edited_time")})
     return pd.DataFrame(rows)
+```
+
+### Read a JSON code block from a Notion page
+
+A useful pattern for lightweight data storage: write a JSON code block to a dedicated Notion page (e.g. from a daily pipeline), then read it back in a UDF. This avoids needing file storage for simple structured data.
+
+```python
+@fused.udf
+def udf():
+    import json
+    nt = fused.api.notion_connect()
+    client = nt.client()
+    blocks = client.blocks.children.list(block_id="YOUR_PAGE_ID")
+    for block in blocks["results"]:
+        if block["type"] == "code":
+            raw = block["code"]["rich_text"][0]["plain_text"]
+            return json.dumps(json.loads(raw))  # validate + return
+    return json.dumps({})
+```
+
+To write the code block from a pipeline (e.g. a Claude agent), use `notion-update-page` with `replace_content` and format the JSON inside a fenced ` ```json ``` ` block.
+
+### ⚠ notion_connect() fails in shared URL execution environment
+
+`fused.api.notion_connect()` works correctly when running via `fused run` (local or remote authenticated execution), but **can fail with HTTP 422** when the UDF is called via a public shared URL endpoint (e.g. `https://udf.ai/fc_TOKEN/udf_name`). The Notion OAuth token is not available in that unauthenticated execution context.
+
+**Fix:** wrap in try/except and fall back to an alternative data source (e.g. Fused file storage):
+
+```python
+@fused.udf
+def udf():
+    import json
+
+    # Try Notion first (works in authenticated context)
+    try:
+        nt = fused.api.notion_connect()
+        client = nt.client()
+        blocks = client.blocks.children.list(block_id="YOUR_PAGE_ID")
+        for block in blocks["results"]:
+            if block["type"] == "code":
+                raw = block["code"]["rich_text"][0]["plain_text"]
+                data = json.loads(raw)
+                if data:
+                    return json.dumps(data)
+    except Exception:
+        pass
+
+    # Fall back to Fused file storage (works in all contexts)
+    try:
+        import fsspec
+        with fsspec.open("s3://fused-users/fused/YOUR_USERNAME/data/latest.json", "r") as f:
+            return json.dumps(json.load(f))
+    except Exception:
+        pass
+
+    return json.dumps({})
 ```
 
 ---
