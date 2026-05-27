@@ -11,6 +11,41 @@ Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notio
 
 ---
 
+## Always test integration UDFs after writing
+
+Integration UDFs fail in ways that static analysis can't catch: missing access grants, wrong page or database IDs, unsupported API methods, or the difference between authenticated `fused run` and public shared-URL execution contexts. **Always run the UDF after writing it** — don't stop at pushing the code.
+
+```bash
+# Basic run
+fused run CANVAS_NAME udf_name
+
+# With a parameter
+fused run CANVAS_NAME udf_name --date=2026-01-15
+
+# Force fresh (skip cache)
+fused run CANVAS_NAME udf_name --cache-max-age=0
+```
+
+**What to accept:** any non-error return. An empty `{}` or `None` is fine if the data source isn't populated yet — what matters is no exception. If the UDF has a `date` or `id` parameter, test with a real value that should have data.
+
+**Start with a minimal smoke test.** When writing a new integration UDF, wire up the connection and return a tiny sanity-check first before building the full logic. This separates "can I connect?" from "does my logic work?":
+
+```python
+@fused.udf
+def udf():
+    # Smoke test: verify connection before writing full logic
+    nt = fused.api.notion_connect()
+    client = nt.client()
+    results = client.search(query="", filter={"value": "page", "property": "object"})
+    return {"connected": True, "pages_visible": len(results.get("results", []))}
+```
+
+Run it with `fused run`, confirm it returns `{"connected": true, ...}`, then build out the real UDF body.
+
+**Also test via the shared URL** if the UDF will be served publicly (e.g. `https://udf.ai/fc_TOKEN/udf_name`). Some integrations — notably Notion — behave differently in that unauthenticated execution context. See the Notion section below for details.
+
+---
+
 ## Google Drive
 
 Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.
