@@ -29,7 +29,7 @@ On Windows the same rules apply, with a few differences:
 
 - **Check PATH:** use `where fused` (not `which`) in cmd/PowerShell.
 - **Python Launcher:** Windows ships a `py` launcher — use `py --version` to check the active version and `py -3.11 -m pip install "fused>=2"` to target a specific version.
-- **`fused` not found after `pip install`:** the Scripts directory (`%APPDATA%\Python\Python3XX\Scripts\` or `%LocalAppData%\Programs\Python\Python3XX\Scripts\`) is often not on PATH. Run `python -m site --user-scripts` to print the exact path, then add it to PATH via System Settings → Environment Variables and open a new terminal.
+- **`fused` not found after `pip install`:** the Scripts directory (`%APPDATA%\Python\Python3XX\Scripts\` or `%LocalAppData%\Programs\Python\Python3XX\Scripts\`) is often not on PATH. Run `python -m site --user-scripts` to print the exact path, then add it to PATH (search "environment variables" in the Start menu → edit the `Path` user variable) and open a new terminal.
 - **Install `uv` on Windows (if not present):**
   ```powershell
   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"

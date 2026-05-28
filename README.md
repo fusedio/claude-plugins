@@ -54,7 +54,7 @@ If `fused` is not found after install, the Scripts directory is likely missing f
 python -m site --user-scripts
 ```
 
-This prints the exact Scripts path (e.g. `C:\Users\You\AppData\Roaming\Python\Python311\Scripts`). Add it to your `PATH` in System Settings → Environment Variables, then open a new terminal and retry `fused claude plugin add`.
+This prints the exact Scripts path (e.g. `C:\Users\You\AppData\Roaming\Python\Python311\Scripts`). Add it to your `PATH` (search "environment variables" in the Start menu → edit the `Path` user variable), then open a new terminal and retry `fused claude plugin add`.
 
 > **Note:** Python 3.9 is too old. `pip install fused` on Python 3.9 silently installs `fused 1.x`, which has no `fused` command. Check with `py --version` or `python --version` and upgrade to 3.10+ (or just use `uvx` above, which handles this automatically).
 
