@@ -19,6 +19,45 @@ fused claude plugin add
 
 Pinning `>=2` makes `pip` fail loudly on Python 3.9 instead of falling back to a library-only release.
 
+## Windows
+
+On Windows, `uv` is the most reliable path because it manages Python for you and avoids the Python 3.9 / PATH pitfalls common on Windows machines.
+
+**Step 1 — install `uv` (no Python required):**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Restart your terminal after this step.
+
+**Step 2 — install the Fused plugin:**
+
+```powershell
+uvx fused claude plugin add
+```
+
+**Step 3 — open a new Claude Code session** to use the plugin.
+
+---
+
+**Alternative: if Python 3.10+ is already installed**
+
+```powershell
+pip install --upgrade "fused>=2"
+fused claude plugin add
+```
+
+If `fused` is not found after install, the Scripts directory is likely missing from your PATH. Run:
+
+```powershell
+python -m site --user-scripts
+```
+
+This prints the exact Scripts path (e.g. `C:\Users\You\AppData\Roaming\Python\Python311\Scripts`). Add it to your `PATH` (search "environment variables" in the Start menu → edit the `Path` user variable), then open a new terminal and retry `fused claude plugin add`.
+
+> **Note:** Python 3.9 is too old. `pip install fused` on Python 3.9 silently installs `fused 1.x`, which has no `fused` command. Check with `py --version` or `python --version` and upgrade to 3.10+ (or just use `uvx` above, which handles this automatically).
+
 ## Manual installation
 
 ### Claude Code
