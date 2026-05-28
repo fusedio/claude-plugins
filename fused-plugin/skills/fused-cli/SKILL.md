@@ -23,19 +23,20 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 Always confirm the CLI is working with `fused whoami` before proceeding. If `fused: command not found` appears right after a `pip install fused`, check `python --version` — Python 3.9 or older is the most common cause and is fixed by switching to `uvx` or installing into a 3.10+ environment.
 
+After running `fused claude plugin add` on **any platform**, Claude Code must be restarted — open a brand-new session for the plugin to be visible.
+
 ### Windows
 
 On Windows the same rules apply, with a few differences:
 
 - **Check PATH:** use `where fused` (not `which`) in cmd/PowerShell.
 - **Python Launcher:** Windows ships a `py` launcher — use `py --version` to check the active version and `py -3.11 -m pip install "fused>=2"` to target a specific version.
-- **`fused` not found after `pip install`:** the Scripts directory (`%APPDATA%\Python\Python3XX\Scripts\` or `%LocalAppData%\Programs\Python\Python3XX\Scripts\`) is often not on PATH. Run `python -m site --user-scripts` to print the exact path, then either add it to `$env:PATH` or bypass PATH entirely with `py -m fused`.
+- **`fused` not found after `pip install`:** the Scripts directory (`%APPDATA%\Python\Python3XX\Scripts\` or `%LocalAppData%\Programs\Python\Python3XX\Scripts\`) is often not on PATH. Run `python -m site --user-scripts` to print the exact path, then add it to PATH via System Settings → Environment Variables and open a new terminal.
 - **Install `uv` on Windows (if not present):**
   ```powershell
   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
   ```
   Restart the terminal after installing, then use `uvx fused` as usual.
-- **After plugin install, Claude Code must be restarted.** Tell the user to open a brand-new Claude Code session — commands run in the same session where the install happened will not see the plugin.
 
 ## Global flags
 
