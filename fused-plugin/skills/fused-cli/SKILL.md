@@ -23,8 +23,6 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 Always confirm the CLI is working with `fused whoami` before proceeding. If `fused: command not found` appears right after a `pip install fused`, check `python --version` — Python 3.9 or older is the most common cause and is fixed by switching to `uvx` or installing into a 3.10+ environment.
 
-After running `fused claude plugin add` on **any platform**, Claude Code must be restarted — open a brand-new session for the plugin to be visible.
-
 ### Windows
 
 On Windows the same rules apply, with a few differences:
