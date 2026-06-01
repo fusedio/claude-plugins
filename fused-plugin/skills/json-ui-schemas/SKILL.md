@@ -77,10 +77,40 @@ Every widget in a JSON UI file follows this envelope:
 - **Maps:** `map`, `map-bounds`, `map-h3`, `fused-map`
 - **Meta / advanced:** `widget-builder`, `transformer`, `ai-chat`
 
+## Accessing UDF data — use `sql-runner`
+
+When a JSON-UI node needs to read data from a canvas UDF, always use `sql-runner` as the root (or a wrapping ancestor). Do **not** put `{{udf_name}}` SQL directly on a leaf widget at the root — it does not resolve reliably without a `sql-runner` ancestor.
+
+**Correct pattern:**
+
+```json
+{
+  "type": "sql-runner",
+  "props": {
+    "sql": "SELECT * FROM {{my_udf}}",
+    "name": "data"
+  },
+  "children": [
+    {
+      "type": "metric",
+      "props": {
+        "label": "Row Count",
+        "sql": "SELECT COUNT(*) FROM {{data}}",
+        "format": "comma"
+      }
+    }
+  ]
+}
+```
+
+- `sql-runner` fetches the UDF output once and exposes it as `{{name}}` to all descendants.
+- Descendants reference `{{data}}` (or whatever `name` you set), **not** `{{my_udf}}`.
+- The canvas edge (`["my_udf", "widget_node"]`) must also exist in `canvas.toml` for the UDF to be reachable at runtime.
+
 ## Common conventions
 
 - `param` syncs a widget's value with a canvas parameter (or a form field when nested in `form`).
-- `sql` fields accept DuckDB queries with `{{udf_name}}` and `$param_name` placeholders. Required output columns vary by widget — check the schema.
+- `sql` fields accept DuckDB queries with `{{source_name}}` and `$param_name` placeholders. Required output columns vary by widget — check the schema. When referencing a canvas UDF's data, use `sql-runner` and reference its `name` in descendant SQL, rather than `{{udf_name}}` directly.
 - `style` is always a CSS string (`"padding: 8px; color: red"`), not an object.
 - Charts default `barColor`/`lineColor` to Fused lime yellow (`#E8FF59`).
 
