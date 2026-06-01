@@ -165,6 +165,8 @@ Inspect, validate, and render JSON-UI widget component schemas (the same schemas
 
 Manage Fused for Claude Code via the `claude` CLI.
 
+**First-time install:** run `uvx fused claude plugin add` — `uvx` fetches fused automatically so this works even before fused is installed. It is the recommended one-command setup and avoids Python version issues entirely.
+
 | Subcommand | Purpose |
 | --- | --- |
 | `plugin add` | Register the marketplace and install `fused@fused-marketplace` |
