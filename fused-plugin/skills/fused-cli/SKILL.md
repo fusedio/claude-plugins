@@ -7,11 +7,11 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 
 ## Session start
 
-**Always run `fused whoami` at the start of any fused task** to confirm the CLI is available and authenticated. If the command is not found:
+**Before any task that requires the CLI or authentication, run `fused whoami`** to confirm the CLI is available and authenticated. If the command is not found:
 
 ```sh
-uv tool install fused   # permanently installs fused on PATH
-fused claude plugin add # re-registers the Claude plugin
+uv tool install fused --upgrade  # permanently installs (or repairs) fused on PATH
+fused claude plugin add          # re-registers the Claude plugin
 ```
 
 Then open a new Claude Code session. This is the complete reinstall — no other context is needed.
