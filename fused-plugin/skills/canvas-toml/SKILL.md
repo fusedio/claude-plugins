@@ -35,16 +35,30 @@ version = 2
 # previewImageUrl = "https://example.com/preview.png"  # optional
 
 [canvas]
-edges = []  # [["sourceUdfName", "targetUdfName"], ...]
+edges = [
+  ["controls", "udf_0"],   # controls widget drives udf_0 via canvas params
+  ["udf_0", "udf_1"],      # udf_1 depends on udf_0's output
+]
+
+[[canvas.nodes]]
+udfName = "controls"
+description = "Input controls"
+title = "Controls"
+visible = true
+x = -2515.89
+y = -288.929
+zIndex = 1
+width = 480
+height = 700
 
 [[canvas.nodes]]
 udfName = "udf_0"
 description = "My first UDF"
 title = "udf_0"
 visible = true
-x = -2515.89
+x = -1985.89
 y = -288.929
-zIndex = 1
+zIndex = 2
 width = 700
 height = 500
 
@@ -53,9 +67,9 @@ udfName = "udf_1"
 description = "My second UDF"
 title = "udf_1"
 visible = true
-x = -2415.89
+x = -1235.89
 y = -288.929
-zIndex = 2
+zIndex = 3
 width = 700
 height = 500
 
@@ -151,9 +165,33 @@ name = "My Demo Canvas"   # display name — spaces OK here
 fused canvas push ./my_canvas --canvas "my_demo_canvas"
 ```
 
-## Edges and canvas parameters
+## Edges — rules and common mistakes
 
-`edges` wire nodes together — both for UDF data flow and to enable canvas **parameter** propagation. Even when nodes communicate via `$param_name` substitution rather than direct data output, an edge from the source node to the display node is still required for the display to receive and react to parameter changes. Always add an edge between an inputs widget node and any display node it drives.
+`edges` serve two purposes: (1) **visual data-flow arrows** users see in the canvas, and (2) **canvas parameter propagation** (values set by a widget/node that downstream UDFs must receive).
+
+**`edges = []` is almost never correct for a multi-node canvas.** An empty edge list means no connections are visible and no parameter propagation *from other nodes* — any UDF that should react to a widget or upstream UDF's output will run in isolation. The only legitimate case for `edges = []` is a canvas where every node is fully independent (no shared params from another node, no data dependencies).
+
+**Critical: `fused.load()` does NOT create canvas edges.** When a UDF calls `fused.load("other_udf")` internally, that is a Python-level import — it has nothing to do with canvas edges. You still must add an explicit edge in `canvas.toml` for both data-flow visualization and parameter propagation. Do not write `edges = []` just because UDFs chain via `fused.load()`.
+
+**When to add an edge from A → B:**
+- Node B reads a canvas parameter (`lat`, `zoom`, any shared param) that is set by node A (e.g. a widget node)
+- Node B calls `fused.load("a")` internally — add `["a", "b"]` to show the dependency visually
+- Node B's output logically depends on node A's output
+
+**Edge syntax** — each entry is `["sourceUdfName", "targetUdfName"]`. Using the template example above:
+
+```toml
+[canvas]
+edges = [
+  ["controls", "udf_0"],   # controls widget drives udf_0 via canvas params
+  ["udf_0", "udf_1"],      # udf_1 calls fused.load("udf_0") internally
+]
+```
+
+**Practical checklist before finalizing `canvas.toml`:**
+1. For every widget/controls node: does it have an edge to each UDF it drives? If not, canvas params won't propagate.
+2. For every `fused.load("x")` call in UDF `b`: is `["x", "b"]` in `edges`? If not, the dependency is invisible to users.
+3. Is `edges` still `[]` with more than one node? If yes, verify every node is truly independent — this is almost certainly wrong.
 
 For JSON-UI widget nodes that reference a UDF via `{{udf_name}}` SQL (typically via `sql-runner`), also add an edge from that UDF node to the widget node: `edges = [["my_udf", "my_widget"]]`. Without the edge, the UDF data is not reachable at runtime.
 
