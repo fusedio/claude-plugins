@@ -144,6 +144,22 @@ Without `height:400px` on the parent `div`, `flex:1` on the chart has nothing to
 ### `form` — top-level `param` bundles all children into one JSON object
 If `form` has a top-level `"param"`, all child values are broadcast as a single JSON object. Remove the top-level `param` so each child broadcasts individually as its own canvas param.
 
+### `sql-runner` — default `maxRows` of 10,000 silently truncates large datasets
+`sql-runner` defaults to `maxRows: 10000`. If the source UDF returns more than 10,000 rows, all child widgets (`metric`, `sql-table`, `line-chart`, etc.) silently operate on only the first 10,000 rows and produce wrong results — for example, a `COUNT(*)` metric returns exactly `10000` instead of the real total.
+
+Always set `maxRows` explicitly on `sql-runner` when the source UDF may return more than 10k rows:
+
+```json
+{
+  "type": "sql-runner",
+  "props": {
+    "sql": "SELECT * FROM {{my_udf}}",
+    "name": "data",
+    "maxRows": 500000
+  }
+}
+```
+
 ## How to use this skill
 
 1. Open `reference.md` and find the section for the widget `type` you're working with.

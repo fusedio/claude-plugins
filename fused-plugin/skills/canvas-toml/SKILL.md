@@ -152,6 +152,16 @@ height = 700
 - When removing a UDF: delete its source file(s) **and** its node entry, plus any `edges` referencing it.
 - UDFs can call each other via `fused.load("<udfName>")`. For multiprocessing, split into a new UDF.
 
+### Testing UDFs that call sibling canvas UDFs
+
+When a UDF uses `fused.load("other_udf")` to call a sibling UDF within the same canvas, **local testing with `fused.load("my_udf.py")` will fail** with a "UDF not found" error. The local file context has no canvas, so the runtime cannot resolve sibling UDF names.
+
+The correct testing approach:
+1. Push the canvas first: `fused canvas push ./my_canvas`
+2. Then test the pushed UDF by name: `fused.load("my_udf")()`
+
+Running by name resolves the UDF from the server with full canvas context, so `fused.load("other_udf")` inside it can find its sibling.
+
 ## Canvas naming
 
 Canvas names (used in `fused canvas push --canvas` and the URL slug) must contain **only letters, numbers, and underscores** — spaces and hyphens are rejected with a 422 error. Use the optional `name` field in `canvas.toml` for a human-readable display name; it is separate from the URL slug.
