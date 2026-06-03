@@ -113,7 +113,7 @@ maxY = 1703.24
 | `width`, `height` | integer | yes | Pixel dimensions |
 | `description` | string | no | Defaults to `"UDF: <name> (auto)"` |
 | `title` | string | no | Defaults to `udfName` |
-| `visible` | boolean | no | Output panel visibility; default `true` |
+| `visible` | boolean | no | Output panel visibility; default `true`. **Must be `true` for any UDF referenced via `{{udf_name}}` in a JSON-UI `sql-runner`.** Hidden nodes do not auto-execute on canvas load, so they have no cached result for widgets to read. |
 | `type` | string | no | Omit for standard UDF; `"udf-folder"` for folder nodes |
 | `textBoxColor` | string | no | Background color for textbox nodes |
 | `textBoxGradient` | boolean | no | Textbox gradient toggle |

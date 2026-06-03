@@ -106,6 +106,7 @@ When a JSON-UI node needs to read data from a canvas UDF, always use `sql-runner
 - `sql-runner` fetches the UDF output once and exposes it as `{{name}}` to all descendants.
 - Descendants reference `{{data}}` (or whatever `name` you set), **not** `{{my_udf}}`.
 - The canvas edge (`["my_udf", "widget_node"]`) must also exist in `canvas.toml` for the UDF to be reachable at runtime.
+- **The source UDF must have `visible = true` in `canvas.toml`.** Hidden nodes (`visible = false`) do not execute on canvas load and have no cached result. Referencing them in `sql-runner` will fail with: `UDF 'my_udf' has no cached result. Run the UDF first.`
 
 ## Common conventions
 
