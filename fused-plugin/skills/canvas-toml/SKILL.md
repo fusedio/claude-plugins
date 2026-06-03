@@ -156,30 +156,29 @@ height = 700
 
 `edges` serve two purposes: (1) **visual data-flow arrows** users see in the canvas, and (2) **canvas parameter propagation** (values set by a widget/node that downstream UDFs must receive).
 
-**`edges = []` is almost never correct for a multi-node canvas.** An empty edge list means no connections are visible and no canvas parameters flow — every node runs in isolation. Only use `edges = []` for a single-node canvas.
+**`edges = []` is almost never correct for a multi-node canvas.** An empty edge list means no connections are visible and no parameter propagation *from other nodes* — any UDF that should react to a widget or upstream UDF's output will run in isolation. The only legitimate case for `edges = []` is a canvas where every node is fully independent (no shared params from another node, no data dependencies).
 
 **Critical: `fused.load()` does NOT create canvas edges.** When a UDF calls `fused.load("other_udf")` internally, that is a Python-level import — it has nothing to do with canvas edges. You still must add an explicit edge in `canvas.toml` for both data-flow visualization and parameter propagation. Do not write `edges = []` just because UDFs chain via `fused.load()`.
 
 **When to add an edge from A → B:**
 - Node B reads a canvas parameter (`lat`, `zoom`, any shared param) that is set by node A (e.g. a widget node)
-- Node B's Python UDF calls `fused.load("a")` — add the edge to show the dependency visually
+- Node B calls `fused.load("a")` internally — add `["a", "b"]` to show the dependency visually
 - Node B's output logically depends on node A's output
 
-**Edge syntax** — each entry is `["sourceUdfName", "targetUdfName"]`:
+**Edge syntax** — each entry is `["sourceUdfName", "targetUdfName"]`. Using the template example above:
 
 ```toml
 [canvas]
 edges = [
-  ["controls", "results"],      # controls widget drives results UDF
-  ["loader", "processor"],      # processor calls fused.load("loader")
-  ["loader", "visualizer"],     # visualizer also depends on loader
+  ["controls", "udf_0"],   # controls widget drives udf_0 via canvas params
+  ["udf_0", "udf_1"],      # udf_1 calls fused.load("udf_0") internally
 ]
 ```
 
 **Practical checklist before finalizing `canvas.toml`:**
 1. For every widget/controls node: does it have an edge to each UDF it drives? If not, canvas params won't propagate.
-2. For every `fused.load("x")` call in a UDF: is there an edge from `x` to that UDF in `edges`? If not, the dependency is invisible to users.
-3. Is `edges` still `[]`? If there's more than one node, that is almost certainly wrong.
+2. For every `fused.load("x")` call in UDF `b`: is `["x", "b"]` in `edges`? If not, the dependency is invisible to users.
+3. Is `edges` still `[]` with more than one node? If yes, verify every node is truly independent — this is almost certainly wrong.
 
 ## Node sizing and viewport
 
