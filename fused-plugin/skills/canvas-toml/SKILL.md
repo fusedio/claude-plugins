@@ -152,6 +152,19 @@ height = 700
 - When removing a UDF: delete its source file(s) **and** its node entry, plus any `edges` referencing it.
 - UDFs can call each other via `fused.load("<udfName>")`. For multiprocessing, split into a new UDF.
 
+## Canvas naming
+
+Canvas names (used in `fused canvas push --canvas` and the URL slug) must contain **only letters, numbers, and underscores** — spaces and hyphens are rejected with a 422 error. Use the optional `name` field in `canvas.toml` for a human-readable display name; it is separate from the URL slug.
+
+```toml
+name = "My Demo Canvas"   # display name — spaces OK here
+```
+
+```sh
+# slug — underscores only
+fused canvas push ./my_canvas --canvas "my_demo_canvas"
+```
+
 ## Edges — rules and common mistakes
 
 `edges` serve two purposes: (1) **visual data-flow arrows** users see in the canvas, and (2) **canvas parameter propagation** (values set by a widget/node that downstream UDFs must receive).
@@ -179,6 +192,8 @@ edges = [
 1. For every widget/controls node: does it have an edge to each UDF it drives? If not, canvas params won't propagate.
 2. For every `fused.load("x")` call in UDF `b`: is `["x", "b"]` in `edges`? If not, the dependency is invisible to users.
 3. Is `edges` still `[]` with more than one node? If yes, verify every node is truly independent — this is almost certainly wrong.
+
+For JSON-UI widget nodes that reference a UDF via `{{udf_name}}` SQL (typically via `sql-runner`), also add an edge from that UDF node to the widget node: `edges = [["my_udf", "my_widget"]]`. Without the edge, the UDF data is not reachable at runtime.
 
 ## Node sizing and viewport
 
