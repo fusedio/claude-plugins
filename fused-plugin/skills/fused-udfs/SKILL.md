@@ -79,6 +79,16 @@ def get_data(bounds: fused.types.Bounds = None, year: int = 2020, limit: int = 1
     """Agent can call with just bounds if needed."""
 ```
 
+> **`fused.types.Bounds = None` means the UDF cannot run standalone.** When `bounds` defaults to `None`, the UDF expects a caller (map viewport, widget, or another UDF) to supply the bbox. If you want to run the UDF with `fused run` or call it without arguments, provide a concrete default bbox instead:
+>
+> ```python
+> # ✗ Cannot run standalone — fused run will fail with no bounds
+> def udf(bounds: fused.types.Bounds = None): ...
+>
+> # ✓ Runs standalone with the default; still overridable by map viewport
+> def udf(bounds: fused.types.Bounds = [-122.5, 37.7, -122.3, 37.9]): ...
+> ```
+
 ## Return Types
 
 **📖 Reference:** [Write UDFs](https://docs.fused.io/core-concepts/write/)
@@ -117,6 +127,27 @@ def udf():
     common = fused.load("https://github.com/fusedio/udfs/tree/******/public/common/")
     return common.some_function()
 ```
+
+## Parallelism with `udf.map()`
+
+`udf.map()` is Fused's native fan-out: it launches N simultaneous serverless jobs, one per item in the list, without needing a dedicated instance. Use this instead of `engine="medium"` for embarrassingly parallel workloads — dedicated instances take ~30s to start, while `udf.map()` on the default engine is nearly instant.
+
+```python
+@fused.udf
+def udf(items: list = ["a", "b", "c"]):
+    # Load the sibling UDF that will run in parallel
+    worker = fused.load("my_worker_udf")
+
+    # Map over items — each becomes a separate serverless call
+    results = worker.map(items, shared_param="value").df()
+    return results
+```
+
+- The first argument to `.map()` is the list to iterate over — each element is passed as the worker UDF's **first positional parameter**.
+- Additional kwargs are **shared** across all invocations (same value for every call).
+- `.df()` blocks until all jobs complete and concatenates their DataFrames.
+- Workers don't receive an index automatically — if each job needs a unique ID, derive it from the item itself rather than relying on a default parameter.
+- **Pass results back via DataFrame columns, not intermediate files.** Workers should return their output (bytes, JSON, computed values) as columns in the returned DataFrame. Writing to S3 and reading back from parallel workers introduces credential and timing issues; returning data directly is simpler and more reliable.
 
 ## Performance Optimization
 
@@ -227,10 +258,40 @@ def udf(title: str = "Bug report", description: str = "", is_severe: bool = Fals
     """
 ```
 
+### Naming: UDF name and parameter names are the first thing the agent sees
+
+The agent reads the tool name and parameter names before the docstring. Name them so the intent is unambiguous without reading any further.
+
+**UDF (file) name** — use a verb phrase that describes the action and its side effect:
+
+```
+# ✗ Ambiguous — does this return data, save it, or display it?
+process_data       export_report       run_model
+
+# ✓ Unambiguous — action + destination makes the side effect explicit
+process_and_save_to_s3     export_report_to_google_drive     run_model_and_return_scores
+```
+
+**Parameter names** — encode type, direction, and format, not just the value:
+
+```python
+# ✗ Ambiguous — input or output? local or S3? folder or file?
+def udf(path: str, output: str, file: str): ...
+
+# ✓ Unambiguous at a glance
+def udf(input_csv_s3_path: str, output_s3_folder: str, output_filename: str): ...
+```
+
+Rules of thumb:
+- Prefix with `input_` or `output_` to signal direction
+- Suffix with `_s3_path`, `_s3_folder`, `_url`, `_local_path` to signal location/format
+- Avoid abbreviations: `num_results` → `number_of_results`, `fmt` → `output_format`
+- For flags, name the true case: `overwrite_existing` is clearer than `force`
+
 ### Design principles for LLM-callable UDFs
 
 - **Simple parameter types** — use `str`, `int`, `bool`. Avoid complex objects; the LLM constructs arguments from the docstring description and can't build nested structures reliably.
-- **Meaningful return columns** — the LLM reads the tool result, so `{"status": "created", "url": "..."}` is useful feedback; an unlabelled array is not.
+- **Meaningful return columns** — the LLM reads the tool result, so `{"status": "saved", "output_s3_path": "s3://..."}` is useful feedback; an unlabelled array is not.
 - **One action per UDF** — an LLM tool that "searches docs and creates a ticket if needed" is harder to invoke correctly than two separate tools. Keep each UDF focused.
 - **`cache_max_age=0` on all write UDFs** — see the note above; silent cache hits are a common failure mode for ticket-creation and notification UDFs.
 

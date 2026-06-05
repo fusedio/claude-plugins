@@ -21,7 +21,7 @@ my_canvas/
 ```
 
 - `<name>.py` / `.json` / `.md` / `.html` — source for a UDF; the **stem must match a node's `udfName`**.
--- File name stems must be unique in a canvas. The following is OK: `abc.json`, `def.py`. The following will NOT work: `abc.json`, `abc.py`
+-- File name stems must be unique in a canvas. The following is OK: `abc.json`, `def.py`. The following will NOT work: `abc.json`, `abc.py`. **The server error for this is misleading** — it says "A UDF with one of those slugs already exists in this collection", which sounds like a cross-canvas naming collision. It's actually caused by the same-stem conflict in your local folder. Fix: delete one of the conflicting files and push again.
 -- JSON-UI files you should consult the `json-ui-schemas` skill for how to write, validate, and debug them. They contain JSON5.
 - `_shared.fused` — omit ⇒ private (author only). Empty file ⇒ team. Set `access_scope = "public"` for public. Set `token = "<value>"` to control the URL slug.
 
@@ -151,6 +151,16 @@ height = 700
 - When adding a UDF: create the `.py` (and any widget file) **and** add a matching `[[canvas.nodes]]` entry with the same stem.
 - When removing a UDF: delete its source file(s) **and** its node entry, plus any `edges` referencing it.
 - UDFs can call each other via `fused.load("<udfName>")`. For multiprocessing, split into a new UDF.
+
+### Testing UDFs that call sibling canvas UDFs
+
+When a UDF uses `fused.load("other_udf")` to call a sibling UDF within the same canvas, **local testing with `fused.load("my_udf.py")` will fail** with a "UDF not found" error. The local file context has no canvas, so the runtime cannot resolve sibling UDF names.
+
+The correct testing approach:
+1. Push the canvas first: `fused canvas push ./my_canvas`
+2. Then test the pushed UDF by name: `fused.load("my_udf")()`
+
+Running by name resolves the UDF from the server with full canvas context, so `fused.load("other_udf")` inside it can find its sibling.
 
 ## Canvas naming
 
