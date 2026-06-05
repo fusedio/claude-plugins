@@ -79,6 +79,16 @@ def get_data(bounds: fused.types.Bounds = None, year: int = 2020, limit: int = 1
     """Agent can call with just bounds if needed."""
 ```
 
+> **`fused.types.Bounds = None` means the UDF cannot run standalone.** When `bounds` defaults to `None`, the UDF expects a caller (map viewport, widget, or another UDF) to supply the bbox. If you want to run the UDF with `fused run` or call it without arguments, provide a concrete default bbox instead:
+>
+> ```python
+> # ✗ Cannot run standalone — fused run will fail with no bounds
+> def udf(bounds: fused.types.Bounds = None): ...
+>
+> # ✓ Runs standalone with the default; still overridable by map viewport
+> def udf(bounds: fused.types.Bounds = [-122.5, 37.7, -122.3, 37.9]): ...
+> ```
+
 ## Return Types
 
 **📖 Reference:** [Write UDFs](https://docs.fused.io/core-concepts/write/)
@@ -117,6 +127,27 @@ def udf():
     common = fused.load("https://github.com/fusedio/udfs/tree/******/public/common/")
     return common.some_function()
 ```
+
+## Parallelism with `udf.map()`
+
+`udf.map()` is Fused's native fan-out: it launches N simultaneous serverless jobs, one per item in the list, without needing a dedicated instance. Use this instead of `engine="medium"` for embarrassingly parallel workloads — dedicated instances take ~30s to start, while `udf.map()` on the default engine is nearly instant.
+
+```python
+@fused.udf
+def udf(items: list = ["a", "b", "c"]):
+    # Load the sibling UDF that will run in parallel
+    worker = fused.load("my_worker_udf")
+
+    # Map over items — each becomes a separate serverless call
+    results = worker.map(items, shared_param="value").df()
+    return results
+```
+
+- The first argument to `.map()` is the list to iterate over — each element is passed as the worker UDF's **first positional parameter**.
+- Additional kwargs are **shared** across all invocations (same value for every call).
+- `.df()` blocks until all jobs complete and concatenates their DataFrames.
+- Workers don't receive an index automatically — if each job needs a unique ID, derive it from the item itself rather than relying on a default parameter.
+- **Pass results back via DataFrame columns, not intermediate files.** Workers should return their output (bytes, JSON, computed values) as columns in the returned DataFrame. Writing to S3 and reading back from parallel workers introduces credential and timing issues; returning data directly is simpler and more reliable.
 
 ## Performance Optimization
 

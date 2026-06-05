@@ -21,7 +21,7 @@ my_canvas/
 ```
 
 - `<name>.py` / `.json` / `.md` / `.html` — source for a UDF; the **stem must match a node's `udfName`**.
--- File name stems must be unique in a canvas. The following is OK: `abc.json`, `def.py`. The following will NOT work: `abc.json`, `abc.py`
+-- File name stems must be unique in a canvas. The following is OK: `abc.json`, `def.py`. The following will NOT work: `abc.json`, `abc.py`. **The server error for this is misleading** — it says "A UDF with one of those slugs already exists in this collection", which sounds like a cross-canvas naming collision. It's actually caused by the same-stem conflict in your local folder. Fix: delete one of the conflicting files and push again.
 -- JSON-UI files you should consult the `json-ui-schemas` skill for how to write, validate, and debug them. They contain JSON5.
 - `_shared.fused` — omit ⇒ private (author only). Empty file ⇒ team. Set `access_scope = "public"` for public. Set `token = "<value>"` to control the URL slug.
 
