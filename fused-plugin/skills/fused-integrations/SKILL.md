@@ -31,6 +31,78 @@ def udf():
 
 ---
 
+## Google APIs (Calendar, Routes, Geocoding)
+
+Google API keys are stored as `fused.secrets["google_maps_api"]` (or whatever key name was used when setting the secret). Access them inside any UDF:
+
+```python
+@fused.udf
+def udf():
+    api_key = fused.secrets["google_maps_api"]
+```
+
+### API key scope — which APIs are enabled matters
+
+A single Google Cloud API key does **not** automatically cover all Google APIs. Each API must be explicitly enabled in the Google Cloud Console for that key. Common split encountered when building calendar/routing UDFs:
+
+| API | Works with standard key? | Notes |
+|---|---|---|
+| Google Calendar API | ✓ | Works with a key that has Calendar enabled |
+| Google Routes API (`routes.googleapis.com`) | ✓ | Works for driving directions + polyline |
+| Google Geocoding API (`maps.googleapis.com/maps/api/geocode`) | ✗ | Returns `REQUEST_DENIED` unless explicitly enabled |
+| Google Places Text Search (`places.googleapis.com`) | ✗ | Returns `403 PERMISSION_DENIED` unless explicitly enabled |
+
+**If you get `REQUEST_DENIED` or `403 PERMISSION_DENIED` from a Google API**, the key exists but the specific API is not enabled for it — it's not an auth failure. Fix: enable the API in Google Cloud Console → APIs & Services for that key.
+
+### Geocoding: use Photon as the reliable fallback
+
+When Google Geocoding/Places are unavailable, `geopy`'s Photon geocoder (komoot's OSM-based service) is the best alternative — same OSM data as Nominatim but with more permissive rate limits and no API key required:
+
+```python
+@fused.udf
+def udf(date: str = "2026-06-11"):
+    import re
+    import time
+    from geopy.geocoders import Photon
+
+    def address_candidates(location):
+        """Yield cleaned address variants to try in order."""
+        s = str(location).strip()
+        # Strip floor references: "30 Rockefeller Plaza 65th Floor" → "30 Rockefeller Plaza"
+        s = re.sub(r'\b\d+(st|nd|rd|th)\s+[Ff]loor\b', '', s).strip().strip(',').strip()
+        yield s
+        # If first comma-segment has no digits, it's a venue name — try without it
+        # "Sunday in Brooklyn, 348 Wythe Ave" → "348 Wythe Ave"
+        parts = [p.strip() for p in s.split(',')]
+        if len(parts) > 1 and not re.search(r'\d', parts[0]):
+            yield ', '.join(parts[1:])
+
+    @fused.cache
+    def geocode_location(location, _v=1):  # bump _v to bust stale cache
+        if not location or not str(location).strip():
+            return None, None
+        geocoder = Photon(user_agent="fused_geocoder")
+        for candidate in address_candidates(location):
+            try:
+                time.sleep(1.1)  # Photon: stay under 1 req/s to avoid rate limits
+                result = geocoder.geocode(candidate, timeout=10)
+                if result:
+                    return result.latitude, result.longitude
+            except Exception as e:
+                print(f"Geocode error on '{candidate}': {e}")
+        return None, None
+```
+
+**Nominatim vs Photon:**
+- Both use OSM data — geocoding quality is equivalent
+- Nominatim (the default `geopy` geocoder): strict 1 req/s per IP enforced server-side; burst requests get IP-level 429 blocks that persist even with retry backoff
+- Photon (komoot): same OSM index, more permissive rate limits, no API key
+- Always use 1.1s sleep between requests regardless of which one you use
+
+**Venue-name address heuristic:** Calendar events often store locations as `"Venue Name, Street Address, City"`. Geocoders fail on the full string because they treat the venue name as part of the street address. The pattern above strips the first comma-segment if it contains no digits, which correctly identifies venue names (`"Sunday in Brooklyn"`, `"Equinox"`, `"AWS Office"`) vs. street numbers (`"348 Wythe Ave"`).
+
+---
+
 ## Google Drive
 
 Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.

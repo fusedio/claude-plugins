@@ -149,6 +149,38 @@ def udf(items: list = ["a", "b", "c"]):
 - Workers don't receive an index automatically — if each job needs a unique ID, derive it from the item itself rather than relying on a default parameter.
 - **Pass results back via DataFrame columns, not intermediate files.** Workers should return their output (bytes, JSON, computed values) as columns in the returned DataFrame. Writing to S3 and reading back from parallel workers introduces credential and timing issues; returning data directly is simpler and more reliable.
 
+**Date-range parallel analysis pattern.** A common use case is running a per-day analysis UDF in parallel over a range of dates. The worker UDF must add a `date` column to its output so the concatenated result stays attributable:
+
+```python
+# Worker UDF (compute_daily_stats.py) — must include 'date' in output
+@fused.udf
+def udf(date: str = "2026-01-01"):
+    import pandas as pd
+    # ... compute stats for this date ...
+    result_df['date'] = date  # ← required: attributable after concat
+    return result_df
+
+# Orchestrator UDF — maps over business days in range
+@fused.udf
+def udf(start_date: str = "2026-06-09", end_date: str = "2026-06-13"):
+    import pandas as pd
+    from datetime import datetime, timedelta
+
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    dates = []
+    current = start
+    while current <= end:
+        if current.weekday() < 5:  # skip weekends
+            dates.append(current.strftime("%Y-%m-%d"))
+        current += timedelta(days=1)
+
+    worker = fused.load("compute_daily_stats")
+    return worker.map(dates).df()  # runs all days in parallel, then concatenates
+```
+
+The parallel execution log from `.map()` will show each day completing independently, which is the key visual proof of parallelism when demoing to customers.
+
 ## Performance Optimization
 
 **📖 Reference:** [Scaling Out UDFs](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/scaling-out/)
@@ -171,6 +203,25 @@ def udf(data_path: str):
     df = load_data(data_path)
     return process_data(df)
 ```
+
+> **`@fused.cache` on inner functions caches failures too.** If a `@fused.cache`-decorated inner function fails (returns `None`, raises, or gets a bad API response), that failure result is stored and returned on every subsequent call with the same arguments — forever, until the cache key changes. Setting `cache_max_age=0` on the outer `@fused.udf` does **not** bust inner `@fused.cache` entries; they have their own persistent storage keyed only on the function arguments.
+>
+> The fix is to add a version parameter (`_v`) to the inner function and bump it to invalidate stale results:
+>
+> ```python
+> @fused.cache
+> def geocode_location(address, _v=1):  # bump _v to bust stale cache
+>     result = call_geocoding_api(address)
+>     return result  # bad result (None) will be cached until _v changes
+> ```
+>
+> Common scenario: a geocoding call returns `None` during an outage or rate-limit burst, that `None` is cached, and subsequent runs silently return `None` even after the underlying issue is fixed. Bump `_v` to force fresh execution:
+>
+> ```python
+> @fused.cache
+> def geocode_location(address, _v=2):  # _v=2 → fresh run, new cache entry
+>     ...
+> ```
 
 ### Performance Guidelines
 - Keep UDFs short and fast (aim for 30-45 seconds, timeout at 120 seconds)
