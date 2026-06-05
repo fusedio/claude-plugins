@@ -145,6 +145,57 @@ height = 700
 | `childUdfOrder` | Ordered `udfName` list for UDFs in this folder |
 | `isLocked` | Locks child editing; default `false` |
 
+## Canvas architecture patterns
+
+### Loader / analysis split
+
+Separate expensive data fetching from the analysis that uses it. Put the expensive call in a hidden `fetch_*` or `load_*` UDF so it caches independently of the analysis parameters. The visible analysis UDFs call it via `fused.load()`:
+
+```
+[fetch_data]  (hidden, visible=false, cached)
+      ↓  fused.load("fetch_data")()
+[analyze_data]  (visible — lightweight, re-runs fast when params change)
+      ↓
+[display_widget]  (visible — JSON widget or map)
+```
+
+```python
+# fetch_data.py — hidden, cached, no parameters that change often
+@fused.udf(cache_max_age="1h")
+def udf(source_url: str = "s3://..."):
+    import pandas as pd
+    return pd.read_parquet(source_url)   # slow — cached for 1 hour
+
+# analyze_data.py — visible, fast, re-runs on every slider/dropdown change
+@fused.udf
+def udf(threshold: float = 0.5, region: str = "north"):
+    df = fused.load("fetch_data")()      # returns instantly from cache
+    return df[df['value'] > threshold]
+```
+
+This pattern means the user can scrub an interactive control without re-fetching the data source each time.
+
+### Single-item + parallel batch dual mode
+
+Design the per-item UDF to work as a standalone visible node, then add a separate orchestrator that fans it out. This gives you two working paths in the same canvas:
+
+```
+[single_item_analysis]   ← single-item, visible, good for debugging
+[batch_analysis]         ← orchestrator, calls single_item_analysis.map(items)
+```
+
+Keep the single-item UDF as the source of truth. The orchestrator is just:
+
+```python
+@fused.udf
+def udf(items_csv: str = "a,b,c"):
+    worker = fused.load("single_item_analysis")
+    items = [x.strip() for x in items_csv.split(",")]
+    return worker.map(items).df()
+```
+
+The worker UDF must include the item identifier as a column in its output — after `.df()` concatenates all results, you need to know which rows came from which item.
+
 ## Authoring rules
 
 - Ephemeral UI state (selection, sidebar) is **not** stored — only nodes, edges, viewport.

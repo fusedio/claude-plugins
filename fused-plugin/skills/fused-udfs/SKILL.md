@@ -149,6 +149,27 @@ def udf(items: list = ["a", "b", "c"]):
 - Workers don't receive an index automatically — if each job needs a unique ID, derive it from the item itself rather than relying on a default parameter.
 - **Pass results back via DataFrame columns, not intermediate files.** Workers should return their output (bytes, JSON, computed values) as columns in the returned DataFrame. Writing to S3 and reading back from parallel workers introduces credential and timing issues; returning data directly is simpler and more reliable.
 
+**Worker + orchestrator pattern.** The idiomatic way to build a parallelisable canvas is to keep the per-item UDF standalone and add a separate orchestrator that fans out over a list. The worker UDF must echo the item it processed back as a column so the concatenated result stays attributable:
+
+```python
+# Worker UDF: handles one item, always works standalone
+@fused.udf
+def udf(item: str = "default"):
+    import pandas as pd
+    result_df = compute(item)
+    result_df['item'] = item  # ← always include — required after concat
+    return result_df
+
+# Orchestrator UDF: generates the list and maps
+@fused.udf
+def udf(items_csv: str = "a,b,c"):
+    worker = fused.load("worker_udf")
+    items = [x.strip() for x in items_csv.split(",")]
+    return worker.map(items).df()
+```
+
+This pattern gives you two working nodes in the canvas: the worker for single-item debugging and the orchestrator for the full parallel run. Design the worker first; the orchestrator is always a thin wrapper.
+
 ## Performance Optimization
 
 **📖 Reference:** [Scaling Out UDFs](https://docs.fused.io/guide/working-with-udfs/udf-best-practices/scaling-out/)
@@ -171,6 +192,24 @@ def udf(data_path: str):
     df = load_data(data_path)
     return process_data(df)
 ```
+
+> **`@fused.cache` on inner functions caches failures too.** If a `@fused.cache`-decorated inner function fails — returns `None`, raises an exception, or gets a bad response from an external API — that failure result is stored and returned on every subsequent call with the same arguments, forever, until the cache key changes. Setting `cache_max_age=0` on the outer `@fused.udf` does **not** bust inner `@fused.cache` entries; they have their own persistent storage keyed only on the function arguments.
+>
+> The standard fix is a `_v` version parameter. Bump it whenever you need to force fresh execution:
+>
+> ```python
+> @fused.cache
+> def fetch_from_api(key, _v=1):
+>     result = external_api_call(key)
+>     return result  # None/error stays cached until _v changes
+>
+> # After fixing the underlying issue, bump _v to bust the stale entry:
+> @fused.cache
+> def fetch_from_api(key, _v=2):
+>     ...
+> ```
+>
+> This comes up most often when an external API call fails during development (rate limit, bad credentials, temporary outage) — the failure gets cached, and even after fixing the issue the UDF keeps returning the stale `None`. The outer `@fused.udf(cache_max_age=0)` only clears the UDF-level result cache, not the inner function's cache.
 
 ### Performance Guidelines
 - Keep UDFs short and fast (aim for 30-45 seconds, timeout at 120 seconds)

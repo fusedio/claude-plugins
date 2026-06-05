@@ -31,6 +31,39 @@ def udf():
 
 ---
 
+## External API keys — scope and fallback patterns
+
+A secret stored as `fused.secrets["my_api_key"]` is just a string — the Fused runtime doesn't know which endpoints it covers. Two things to verify before writing logic that depends on a key:
+
+1. **Test the specific endpoint, not just the key.** Many providers (Google, AWS, Stripe) issue keys with per-API or per-product scopes. A key that authenticates successfully against one API may return `403`, `REQUEST_DENIED`, or `PERMISSION_DENIED` on another, even from the same provider. Test each endpoint explicitly in isolation before assuming the key covers it.
+
+2. **Build a primary + fallback chain for critical paths.** If a UDF must geocode, enrich, or classify data and the primary API is unavailable or uncredentialed, having a fallback keeps the rest of the pipeline alive:
+
+```python
+@fused.cache
+def enrich(item, _v=1):
+    # Try primary API
+    result = call_primary_api(item)
+    if result is not None:
+        return result
+    # Fall back to alternative (open API, cached copy, degraded mode)
+    return call_fallback_api(item)
+```
+
+**Rate-limited APIs:** Any external API that enforces per-second or per-minute limits needs an explicit sleep between uncached calls. Wrap each call in `@fused.cache` so the sleep only fires on the first call per unique input; subsequent calls return instantly from cache:
+
+```python
+@fused.cache
+def call_rate_limited_api(key, _v=1):
+    import time
+    time.sleep(1.1)  # stay under 1 req/s
+    return make_request(key)
+```
+
+Without the cache, every UDF run re-fires every API call, burning rate limit and adding latency proportional to the number of unique inputs.
+
+---
+
 ## Google Drive
 
 Google Drive access only works inside **cloud UDFs** — local Python raises "Google Drive is not connected" even if CLI list commands work. Connect via Workbench → Integrations → Google Drive (OAuth browser flow), then grant file/folder access via the Picker UI.
