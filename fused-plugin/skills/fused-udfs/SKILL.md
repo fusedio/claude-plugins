@@ -258,10 +258,40 @@ def udf(title: str = "Bug report", description: str = "", is_severe: bool = Fals
     """
 ```
 
+### Naming: UDF name and parameter names are the first thing the agent sees
+
+The agent reads the tool name and parameter names before the docstring. Name them so the intent is unambiguous without reading any further.
+
+**UDF (file) name** — use a verb phrase that describes the action and its side effect:
+
+```
+# ✗ Ambiguous — does this return a TIF, save one, display one?
+export_hillshade
+
+# ✓ Unambiguous — saves to S3, nothing else
+export_hillshade_to_s3
+```
+
+**Parameter names** — encode type and role, not just the value:
+
+```python
+# ✗ Ambiguous — a path to what? input or output? local or S3?
+def udf(path: str, s3_path: str): ...
+
+# ✓ Unambiguous
+def udf(input_file_path: str, output_s3_folder: str): ...
+```
+
+Rules of thumb:
+- If a param is an S3 path, say so: `output_s3_path`, `input_s3_folder`
+- If a param controls a destination, say "output" or "destination": `output_format`, `destination_folder`
+- Avoid abbreviations (`lat` → `latitude`, `az` → `azimuth_degrees`)
+- For flags, name the true case: `overwrite_existing` is clearer than `force`
+
 ### Design principles for LLM-callable UDFs
 
 - **Simple parameter types** — use `str`, `int`, `bool`. Avoid complex objects; the LLM constructs arguments from the docstring description and can't build nested structures reliably.
-- **Meaningful return columns** — the LLM reads the tool result, so `{"status": "created", "url": "..."}` is useful feedback; an unlabelled array is not.
+- **Meaningful return columns** — the LLM reads the tool result, so `{"status": "saved", "output_s3_path": "s3://..."}` is useful feedback; an unlabelled array is not.
 - **One action per UDF** — an LLM tool that "searches docs and creates a ticket if needed" is harder to invoke correctly than two separate tools. Keep each UDF focused.
 - **`cache_max_age=0` on all write UDFs** — see the note above; silent cache hits are a common failure mode for ticket-creation and notification UDFs.
 
