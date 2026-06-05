@@ -265,27 +265,27 @@ The agent reads the tool name and parameter names before the docstring. Name the
 **UDF (file) name** — use a verb phrase that describes the action and its side effect:
 
 ```
-# ✗ Ambiguous — does this return a TIF, save one, display one?
-export_hillshade
+# ✗ Ambiguous — does this return data, save it, or display it?
+process_data       export_report       run_model
 
-# ✓ Unambiguous — saves to S3, nothing else
-export_hillshade_to_s3
+# ✓ Unambiguous — action + destination makes the side effect explicit
+process_and_save_to_s3     export_report_to_google_drive     run_model_and_return_scores
 ```
 
-**Parameter names** — encode type and role, not just the value:
+**Parameter names** — encode type, direction, and format, not just the value:
 
 ```python
-# ✗ Ambiguous — a path to what? input or output? local or S3?
-def udf(path: str, s3_path: str): ...
+# ✗ Ambiguous — input or output? local or S3? folder or file?
+def udf(path: str, output: str, file: str): ...
 
-# ✓ Unambiguous
-def udf(input_file_path: str, output_s3_folder: str): ...
+# ✓ Unambiguous at a glance
+def udf(input_csv_s3_path: str, output_s3_folder: str, output_filename: str): ...
 ```
 
 Rules of thumb:
-- If a param is an S3 path, say so: `output_s3_path`, `input_s3_folder`
-- If a param controls a destination, say "output" or "destination": `output_format`, `destination_folder`
-- Avoid abbreviations (`lat` → `latitude`, `az` → `azimuth_degrees`)
+- Prefix with `input_` or `output_` to signal direction
+- Suffix with `_s3_path`, `_s3_folder`, `_url`, `_local_path` to signal location/format
+- Avoid abbreviations: `num_results` → `number_of_results`, `fmt` → `output_format`
 - For flags, name the true case: `overwrite_existing` is clearer than `force`
 
 ### Design principles for LLM-callable UDFs
