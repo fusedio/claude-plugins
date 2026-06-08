@@ -10,8 +10,8 @@ description: Reference for the Fused Python SDK command line interface (`fused`)
 **Before any task that requires the CLI or authentication, run `fused whoami`** to confirm the CLI is available and authenticated. If the command is not found:
 
 ```sh
-uv tool install fused --upgrade  # permanently installs (or repairs) fused on PATH
-fused claude plugin add          # re-registers the Claude plugin
+uv tool install 'fused[vector]' --upgrade  # permanently installs (or repairs) fused on PATH
+fused claude plugin add                     # re-registers the Claude plugin
 ```
 
 Then open a new Claude Code session. This is the complete reinstall — no other context is needed.
@@ -21,7 +21,7 @@ Then open a new Claude Code session. This is the complete reinstall — no other
 `fused` is installed as part of the `fused` Python package. The CLI ships in `fused>=2`, which requires **Python 3.10 or newer** — on Python 3.9 `pip install fused` falls back to a 1.x release that has no `fused` entry point. If `fused` is not on `PATH`, locate or install it before running any commands:
 
 1. **Check PATH first:** `which fused` — if found, use it directly.
-2. **Not found? Install permanently (recommended):** `uv tool install fused` — installs fused as a persistent tool so it is always on PATH, even in new sessions. Requires `uv` ([install instructions](https://docs.astral.sh/uv/getting-started/installation/)).
+2. **Not found? Install permanently (recommended):** `uv tool install 'fused[vector]'` — installs fused as a persistent tool so it is always on PATH, even in new sessions. The `vector` extra bundles `geopandas`/`pandas`/`shapely` so local `fused run` works (without it, deserializing a result DataFrame raises `ModuleNotFoundError: No module named 'pandas'`). Requires `uv` ([install instructions](https://docs.astral.sh/uv/getting-started/installation/)).
 3. **Quick one-off (no permanent install):** `uvx fused` — runs the latest version without touching PATH. Use this only when you don't need `fused` to persist across sessions.
 4. **Project venv:** if the project uses a `.venv`, run `uv run fused` or `.venv/bin/fused`. Confirm the venv is Python 3.10+ (`.venv/bin/python --version`); if it's 3.9, recreate it with `uv venv --python 3.11 .venv` before installing.
 5. **Conda env:** the binary may live inside a conda environment (`~/miniforge3/envs/<env>/bin/fused`). Activate the env or call the full path. If the env is on Python 3.9, create a new one with `conda create -n fused python=3.11`.
@@ -31,7 +31,7 @@ Then open a new Claude Code session. This is the complete reinstall — no other
 On Windows the same rules apply, with a few differences:
 
 - **Check PATH:** use `where fused` (not `which`) in cmd/PowerShell.
-- **Python Launcher:** Windows ships a `py` launcher — use `py --version` to check the active version and `py -3.11 -m pip install "fused>=2"` to target a specific version.
+- **Python Launcher:** Windows ships a `py` launcher — use `py --version` to check the active version and `py -3.11 -m pip install "fused[vector]>=2"` to target a specific version.
 - **`fused` not found after `pip install`:** the Scripts directory (`%APPDATA%\Python\Python3XX\Scripts\` or `%LocalAppData%\Programs\Python\Python3XX\Scripts\`) is often not on PATH. Run `python -m site --user-scripts` to print the exact path, then add it to PATH (search "environment variables" in the Start menu → edit the `Path` user variable) and open a new terminal.
 - **Install `uv` on Windows (if not present):**
   ```powershell
@@ -168,9 +168,9 @@ Inspect, validate, and render JSON-UI widget component schemas (the same schemas
 
 Manage Fused for Claude Code via the `claude` CLI.
 
-**First-time install:** `uv tool install fused` then `fused claude plugin add` — this permanently installs `fused` on PATH so Claude can find it in every future session. After opening a new Claude Code session, verify with `fused whoami`.
+**First-time install:** `uv tool install 'fused[vector]'` then `fused claude plugin add` — this permanently installs `fused` on PATH so Claude can find it in every future session. After opening a new Claude Code session, verify with `fused whoami`.
 
-**If fused is not found in a new session:** run `uv tool install fused` (no other context needed) then `fused claude plugin add`, and open a new session.
+**If fused is not found in a new session:** run `uv tool install 'fused[vector]'` (no other context needed) then `fused claude plugin add`, and open a new session.
 
 | Subcommand | Purpose |
 | --- | --- |

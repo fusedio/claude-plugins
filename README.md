@@ -3,11 +3,13 @@
 Install the Fused plugin for Claude Code:
 
 ```sh
-uv tool install fused
+uv tool install 'fused[vector]'
 fused claude plugin add
 ```
 
 Then open a new Claude Code session. `fused` is now permanently on your PATH — Claude can find it in any future session without reinstalling.
+
+> **Why `fused[vector]`?** The `vector` extra installs `geopandas` (and therefore `pandas`) plus `shapely`. Without these, running UDFs locally fails with `ModuleNotFoundError: No module named 'pandas'` when the result DataFrame is deserialized. Plain `uv tool install fused` only gives you the CLI itself.
 
 If `uv` is not found, install it first, then re-run the commands above:
 
@@ -17,7 +19,7 @@ If `uv` is not found, install it first, then re-run the commands above:
 ## Reinstall / update
 
 ```sh
-uv tool install fused --upgrade
+uv tool install 'fused[vector]' --upgrade
 fused claude plugin add
 ```
 
@@ -26,11 +28,11 @@ fused claude plugin add
 If Python 3.10+ is already installed and you prefer not to use `uv`:
 
 ```sh
-pip install --upgrade 'fused>=2'
+pip install --upgrade 'fused[vector]>=2'
 fused claude plugin add
 ```
 
-> **Python 3.9 note:** `pip install fused` on Python 3.9 silently installs `fused 1.x`, which has no `fused` command. Pinning `>=2` makes pip fail loudly instead. Use `uv tool install fused` above to avoid this entirely.
+> **Python 3.9 note:** `pip install fused` on Python 3.9 silently installs `fused 1.x`, which has no `fused` command. Pinning `>=2` makes pip fail loudly instead. Use `uv tool install 'fused[vector]'` above to avoid this entirely.
 
 ### Windows (pip path)
 
