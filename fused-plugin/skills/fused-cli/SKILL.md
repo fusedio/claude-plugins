@@ -252,20 +252,20 @@ Options:
 - `--stdin` — read UDF source from stdin instead of passing `UDF` (do not pass `UDF` with `--stdin`)
 - `--verbose / --no-verbose` — show UDF stdout/stderr (default on)
 
-> **`--with pandas` required for local result deserialization.** When running via `uv run`, the result DataFrame is deserialized locally and requires `pandas` to be available in that environment. Without it you get `ModuleNotFoundError: No module named 'pandas'` even if the UDF itself doesn't use pandas. Always add `--with pandas`:
+> **`fused[vector]` required for local result deserialization.** When running via `uv run`, the result DataFrame is deserialized locally and requires `pandas` to be available in that environment. Without it you get `ModuleNotFoundError: No module named 'pandas'` even if the UDF itself doesn't use pandas. Install `fused[vector]` — it pulls in `geopandas` (and therefore `pandas`), plus `shapely`, which most UDFs need:
 >
 > ```bash
-> uv run --no-project --with fused --with pandas fused run my_canvas my_udf --param=value
+> uv run --no-project --with 'fused[vector]' fused run my_canvas my_udf --param=value
 > ```
 >
-> `--no-project` avoids pulling in the current directory's dependencies, which can conflict with fused's requirements.
+> `--no-project` avoids pulling in the current directory's dependencies, which can conflict with fused's requirements. If you only need plain `pandas` and not the geospatial stack, `--with fused --with pandas` also works.
 
 Additionally, `fused run` accepts **arbitrary keyword args matching the UDF's signature**, e.g. `--abc=123` is forwarded as the `abc` parameter to the UDF. These pass-through args are not listed in `--help`.
 
-When running locally via `uv run`, include `--with pandas` if the UDF returns a DataFrame — the CLI needs pandas to deserialize the result, and the error (`ModuleNotFoundError: No module named 'pandas'`) appears at result-read time, not inside the UDF itself:
+When running locally via `uv run`, install `fused[vector]` if the UDF returns a DataFrame — the CLI needs pandas to deserialize the result, and the error (`ModuleNotFoundError: No module named 'pandas'`) appears at result-read time, not inside the UDF itself. `fused[vector]` bundles `pandas` (via `geopandas`) along with `shapely`, covering both plain and geospatial DataFrames:
 
 ```bash
-uv run --with fused --with pandas fused run my_canvas my_udf --param=value
+uv run --with 'fused[vector]' fused run my_canvas my_udf --param=value
 ```
 
 ## `fused udf-schema CANVAS UDF`
