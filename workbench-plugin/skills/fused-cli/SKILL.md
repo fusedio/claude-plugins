@@ -176,9 +176,9 @@ Manage Fused for Claude Code via the `claude` CLI.
 
 | Subcommand | Purpose |
 | --- | --- |
-| `plugin add` | Register the marketplace and install `fused@fused-marketplace` |
-| `plugin update` | Update `fused@fused-marketplace` to the latest version |
-| `plugin remove` | Remove the fused plugin |
+| `plugin add` | Register the marketplace and install `workbench@fused-marketplace` |
+| `plugin update` | Update `workbench@fused-marketplace` to the latest version |
+| `plugin remove` | Remove the workbench plugin |
 | `add-mcp CANVAS_REF` | Register the hosted canvas MCP endpoint with Claude Code (same as Workbench "Copy MCP"). Options: `--token`, `--team`, `--id`, `--create-session-token/--no-create-session-token` (default: on), `--session-max-age TEXT` (default `1h`) |
 
 ## `fused workbench completion`
@@ -289,6 +289,6 @@ Use this to introspect parameters before calling `fused workbench run` with `--<
 
 - If the CLI lives in a project venv, prefix with `uv run` so the right environment is used.
 - For machine-readable output in scripts, pass `--format json`.
-- Run `fused <command> --help` to confirm flags before scripting — this reference may lag the CLI.
+- Run `fused workbench <command> --help` to confirm flags before scripting — this reference may lag the CLI.
 - When appropriate, give the user the URL to the created canvas so they can open it in their browser and see the result.
 - **Prefer the CLI for debugging.** Before asking the user to open the canvas UI to check a change, try to reproduce locally: `fused workbench run` for UDFs, `fused workbench json-ui validate` / `run-shared-widget` for widgets, `fused workbench canvas pull --dry-run` to inspect what changed remotely. This catches most issues without a round trip.
