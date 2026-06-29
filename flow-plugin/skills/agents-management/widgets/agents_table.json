@@ -1,0 +1,9 @@
+{
+  "type": "sql-table",
+  "props": {
+    "title": "Agent roster",
+    "sql": "SELECT slug, name, title, role, adapter, model, builtin FROM {{_core.agents-management.read}} ORDER BY slug",
+    "sortable": true,
+    "filterable": true
+  }
+}

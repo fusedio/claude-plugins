@@ -1,0 +1,9 @@
+{
+  "type": "task-board",
+  "props": {
+    "project": "all",
+    "sql": "SELECT * FROM {{_core.task-management.read?rev=$ofTasksRev}}",
+    "defaultView": "board",
+    "defaultGroupBy": "status"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "sql-table",
+  "props": {
+    "title": "Runs",
+    "sql": "SELECT id, taskId, status, model, costUsd, createdAt, finishedAt FROM {{_core.run-management.read}} ORDER BY createdAt DESC",
+    "sortable": true,
+    "filterable": true
+  }
+}

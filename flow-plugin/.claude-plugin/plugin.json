@@ -1,0 +1,9 @@
+{
+  "name": "flow-skills",
+  "description": "Skills for working with OpenFused as a Claude Code plugin: the _core management skills (task, run, secrets, agent-roster, and feedback state) plus usage skills for setting up OpenFused and building projects end-to-end (setup, infra, cli, projects, execute, verify, storage, widgets, feedback). Load with `claude --plugin-dir <path-to-this-repo>`.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Fused"
+  },
+  "skills": "./skills"
+}
