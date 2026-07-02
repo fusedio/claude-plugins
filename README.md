@@ -2,8 +2,8 @@
 
 The `fused-marketplace` ships two Claude Code plugins:
 
-- **[`flow-skills`](flow-plugin/)** — the primary plugin. Usage/guide skills for building with **Fused** end-to-end: setup, infra, the `fused` CLI/MCP toolkit, project authoring, execution, verification, storage, and widgets.
-- **[`workbench`](workbench-plugin/)** — legacy skills for the Fused **workbench** SDK CLI (`fused workbench …`): canvas.toml, JSON-UI widgets, UDFs, and integrations.
+- **[`agent-core`](agent-core/)** — the primary plugin. Usage/guide skills for building with **Fused** end-to-end: setup, infra, the `fused` CLI/MCP toolkit, project authoring, execution, verification, storage, and widgets.
+- **[`workbench`](workbench/)** — legacy skills for the Fused **workbench** SDK CLI (`fused workbench …`): canvas.toml, JSON-UI widgets, UDFs, and integrations.
 
 > **Heads up — CLI namespace change.** The original Fused repo was consolidated with OpenFused and now ships as a single `fused` package. The bare `fused` command is now the **OpenFused agent toolkit**; the legacy proprietary SDK CLI now lives under **`fused workbench`** (e.g. `fused canvas push` → `fused workbench canvas push`). The package and install command (`uv tool install 'fused[vector]'`) are unchanged.
 
@@ -11,15 +11,15 @@ The `fused-marketplace` ships two Claude Code plugins:
 
 ```sh
 claude plugin marketplace add fusedio/claude-plugins
-claude plugin install flow-skills@fused-marketplace   # OpenFused (primary)
+claude plugin install agent-core@fused-marketplace   # primary
 claude plugin install workbench@fused-marketplace      # legacy workbench skills
 ```
 
 To update or remove:
 
 ```sh
-claude plugin update flow-skills@fused-marketplace
-claude plugin remove flow-skills
+claude plugin update agent-core@fused-marketplace
+claude plugin remove agent-core
 # Or, for the entire marketplace:
 claude plugin marketplace remove fused-marketplace
 ```
@@ -27,7 +27,7 @@ claude plugin marketplace remove fused-marketplace
 You can also load a plugin directly from a local checkout without the marketplace:
 
 ```sh
-claude --plugin-dir ./flow-plugin
+claude --plugin-dir ./agent-core
 ```
 
 ## Installing the `fused` CLI

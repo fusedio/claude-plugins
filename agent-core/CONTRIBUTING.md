@@ -1,4 +1,4 @@
-# Contributing to flow-skills
+# Contributing to agent-core
 
 These skills are shared, versioned source that many people load as one plugin.
 Two kinds of change are handled in **opposite** ways — pick the path that matches

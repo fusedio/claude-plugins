@@ -5,7 +5,7 @@ description: Reference for the legacy Fused Python SDK command line interface, n
 
 # Fused CLI (workbench)
 
-> **Namespace note:** The Fused repo was consolidated with OpenFused. The bare `fused` command is now the OpenFused agent toolkit; the legacy proprietary SDK CLI documented here lives under **`fused workbench`** (e.g. `fused workbench canvas push`, `fused workbench run`). The package and install command are unchanged (`uv tool install 'fused[vector]'`). For the new top-level toolkit, see the `flow-skills` plugin's `openfused-cli` skill.
+> **Namespace note:** The Fused repo was consolidated with OpenFused. The bare `fused` command is now the OpenFused agent toolkit; the legacy proprietary SDK CLI documented here lives under **`fused workbench`** (e.g. `fused workbench canvas push`, `fused workbench run`). The package and install command are unchanged (`uv tool install 'fused[vector]'`). For the new top-level toolkit, see the `agent-core` plugin's `fused-cli` skill.
 
 ## Session start
 

@@ -8,8 +8,8 @@
   },
   "plugins": [
     {
-      "name": "flow-skills",
-      "source": "./flow-plugin",
+      "name": "agent-core",
+      "source": "./agent-core",
       "description": "Skills for building with Fused: end-to-end project authoring, the fused CLI/MCP toolkit, widgets, execution, verification, and storage.",
       "version": "0.1.0",
       "author": {
@@ -23,7 +23,7 @@
     },
     {
       "name": "workbench",
-      "source": "./workbench-plugin",
+      "source": "./workbench",
       "description": "Skills for the legacy Fused workbench SDK CLI (`fused workbench …`): canvas.toml format, JSON UI widget schemas, UDFs, integrations, and the workbench CLI.",
       "version": "0.1.3",
       "author": {

@@ -1,4 +1,4 @@
-# flow-skills
+# agent-core
 
 A self-contained [Claude Code](https://claude.com/claude-code) plugin for working with **Fused** — end-to-end data work on cloud-native datasets via MCP and CLI. It bundles the usage/guide skills that take you from a fresh install to a running project and its widget UI, with no other repo required.
 
@@ -9,7 +9,7 @@ These skills are written to **drive the `fused` CLI** from an agent (Claude Code
 Load the repo as a plugin:
 
 ```sh
-claude --plugin-dir /path/to/flow-skills
+claude --plugin-dir /path/to/agent-core
 ```
 
 The manifest at [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) points at the [`skills/`](skills/) directory (`"skills": "./skills"`), so every skill below loads at once. Each skill is also self-contained and usable on its own.
