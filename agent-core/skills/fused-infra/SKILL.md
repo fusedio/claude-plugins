@@ -5,6 +5,9 @@ description: Reference for the infrastructure managed by fused — what resource
 
 # fused AWS infrastructure
 
+> **Part of the Fused skill set.** This covers the AWS resources only. For install
+> and provisioning see **`fused-setup`**; see **`fused-guide`** for the full set.
+
 fused manages a small, fixed set of AWS resources per environment. All resources are scoped to the environment's `function_prefix` (default `openfused-`). Nothing outside that scope is touched.
 
 ---

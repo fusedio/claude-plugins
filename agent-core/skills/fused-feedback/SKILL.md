@@ -5,6 +5,13 @@ description: Show the human a real browser UI — to ask a question, get an appr
 
 # Fused feedback — ask the human through a visual UI
 
+> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
+> project ⊃ UDF`. The moment a task touches a **project, UDF, or data-bound widget**
+> (anything with `{{ref}}`/`sql`, e.g. opening an existing project's widget), load
+> **`fused-projects`** (end-to-end model + how projects/widgets are addressed) and
+> **`fused-widgets`** (how `{{ref}}` resolution runs) *before acting*. See
+> **`fused-guide`** for the full set. This skill assumes that context.
+
 Instead of asking the human a question as terminal text, render a **real browser
 UI** and get a **structured answer back as JSON**. You author a small JSON-UI
 config (a tree of `{type, props, children}` nodes — text, inputs, buttons), open

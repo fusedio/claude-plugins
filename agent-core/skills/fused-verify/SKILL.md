@@ -5,6 +5,11 @@ description: Security scanning, testing, and correctness validation for code run
 
 # Security, testing, and validation in fused
 
+> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
+> project ⊃ UDF`. If you're validating code that belongs to a project, load
+> **`fused-projects`** for the end-to-end flow (specs, run, deploy) and
+> **`fused-execute`** for how code runs. See **`fused-guide`** for the full set.
+
 ## Overview
 
 fused has several complementary quality layers that can be applied to code before or after execution:

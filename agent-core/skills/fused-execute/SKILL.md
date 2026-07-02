@@ -5,6 +5,12 @@ description: Best practices for running code through fused's execute_code tool. 
 
 # Running code via fused
 
+> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
+> project ⊃ UDF`. If the task is part of building or running a project (not a
+> one-off snippet), load **`fused-projects`** for the end-to-end model, and
+> **`fused-widgets`** if the result is a rendered UI. See **`fused-guide`** for the
+> full set.
+
 ## Core principle: code should do one thing
 
 The code string passed to `execute_code` should be as focused as possible:

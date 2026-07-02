@@ -5,6 +5,11 @@ description: Reference for the fused CLI — environment management, file storag
 
 # fused CLI reference
 
+> **Part of the Fused skill set — don't work from it alone.** This is the command
+> reference. For the workflow that decides *which* commands to run, load
+> **`fused-projects`** (project lifecycle) or **`fused-widgets`** (rendering a UI).
+> See **`fused-guide`** for the full set.
+
 Check the installed version with `fused --version` (useful for confirming an install before configuring anything).
 
 ## Environment selection

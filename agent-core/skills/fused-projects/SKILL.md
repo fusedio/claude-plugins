@@ -5,6 +5,11 @@ description: The canonical end-to-end guide for an agent driving Fused — pick 
 
 # Driving Fused end-to-end (spec-first, agent-authored)
 
+> **Part of the Fused skill set — don't work from it alone.** When the output is a
+> rendered UI (a dashboard or an editable widget), also load **`fused-widgets`**;
+> for a question/approval/plan UI, load **`fused-feedback`**. See **`fused-guide`**
+> for the full set.
+
 Fused organises work as **workspace ⊃ project ⊃ UDF**. You — the driving
 agent — author the specs and the code; Fused supplies the scaffold, the
 deterministic validators, a spec↔code consistency hook, and the run/deploy

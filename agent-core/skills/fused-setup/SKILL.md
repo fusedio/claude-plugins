@@ -5,6 +5,10 @@ description: Step-by-step guide for installing and setting up fused for the firs
 
 # Setting up fused
 
+> **Part of the Fused skill set.** This covers install + provisioning only. Once
+> set up, see **`fused-guide`** to route to the skill for the actual task
+> (`fused-projects`, `fused-widgets`, etc.).
+
 ## Overview
 
 Setup has four phases:

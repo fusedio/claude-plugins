@@ -5,6 +5,11 @@ description: The fused storage and secrets MCP tools — inspecting cloud-native
 
 # Storage & secrets in fused
 
+> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
+> project ⊃ UDF`. If this is a step in building or running a project, load
+> **`fused-projects`** for the end-to-end model and **`fused-execute`** for running
+> code over the data. See **`fused-guide`** for the full set.
+
 These tools are the **find → load → explore** front of the workflow: locate data,
 understand its shape, and move bytes in/out — *before* you run code over it with
 `execute_code`. All are **always-on** MCP tools (no `--enable-infra` /
