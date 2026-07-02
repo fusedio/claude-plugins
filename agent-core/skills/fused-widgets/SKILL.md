@@ -5,6 +5,12 @@ description: Authoring and previewing JSON-UI widgets as the response of running
 
 # Widgets — getting a rendered result back
 
+> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
+> project ⊃ UDF`. Before acting, also load **`fused-projects`** for the end-to-end
+> model (creating, running, opening, and deploying a project's widget). For a
+> question/approval/plan UI load **`fused-feedback`**. See **`fused-guide`** for the
+> full set — this skill assumes that context.
+
 In most Fused flows the thing a human wants back is a **widget** (an
 interactive dashboard), not a raw value. A widget is a JSON config; running it
 yields *resolved rows that a renderer turns into a visual*. This skill covers
