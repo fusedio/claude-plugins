@@ -535,7 +535,7 @@ by the interaction you need:
 | You want… | Use | Command | Response back to the agent |
 |---|---|---|---|
 | **One-shot** feedback ("show this, tell me when done") | `widget open` | `fused widget open scripts/sales-board/main.json` | Blocks until the human submits/closes (or `--timeout`, default 600s); prints the final `$param` state as one JSON line to stdout |
-| **A standing / long-running widget** (push successive views, stream human events) | **parley** | `widget push <cfg>` + `widget watch` (or `widget agent`) | NDJSON event stream (`action`/`close`); the view persists on `/parley`, push a new one and keep watching. See [Long-running / standing widgets](#long-running--standing-widgets). |
+| **A standing / long-running widget** (push successive views, stream human events) | **parley** | `widget push <cfg>` + `widget watch` (or `widget agent`) | NDJSON event stream (`action`/`close`); the view persists on `/parley`, push a new one and keep watching. Consume `watch` via a **`Monitor`** (not a background task) so each event wakes you. See [Long-running / standing widgets](#long-running--standing-widgets). |
 | **A comment-driven revise loop** (human pins comments on the widget; an agent edits the file) | **parley + `widget agent`** | `widget push <file.json>` (or `--project-dir <root>`) in one terminal, `widget agent` in another | The human comments on the file-backed parley page (no flow app); `widget agent` turns each comment into a file edit + re-push. See `fused-feedback` → *CLI-native comment feedback*. |
 | **The flow UI** (browse **saved dashboards**) — *separate tool, out of scope* | flow | `flow` (or `npx @fusedio/flow` once published) | Human-driven. **Only `widgets/<stem>.json` live-renders** — a `json` UDF shows as source. |
 | **A shareable URL** (stakeholder, no local server) | deploy | `fused udf deploy sales-board --project <p>` | A rendered widget URL (preview → promote to release) |
@@ -614,9 +614,20 @@ means:
   `widget push <cfg>` posts a view and **exits immediately**, the view stays on the
   standing `/parley` page, and `widget watch` (its `--timeout` defaults to **0 =
   watch forever**) streams the human's events as NDJSON. Push successive views onto
-  the same page over time; run `watch` in the background for the life of the
-  collaboration. This is the surface to reach for when the widget must outlive a
-  single blocking call.
+  the same page over time. This is the surface to reach for when the widget must
+  outlive a single blocking call.
+  - **Consume the event stream with a `Monitor`, not a plain background task.**
+    `watch` streams forever, so a `run_in_background` task only notifies you when it
+    *exits* (it never does) — you'd sit blind while the human comments. Run `watch`
+    **directly as the `Monitor` command** (`persistent: true`) so each NDJSON line
+    wakes you the instant the human acts. Arm it **before** the first `push`. This is
+    the same pattern documented in `fused-feedback` → *React live with a Monitor*:
+    ```
+    Monitor(description: "parley human events", persistent: true,
+            command: "fused widget watch --from latest")
+    ```
+    (The other "Monitor" mentions above are for polling **stderr** for the `open`
+    URL — a different job than consuming this event stream.)
 
 Either way, the **widget-host itself is a detached background process that
 outlives the CLI call** — it binds a fixed loopback port (default 4410) and a
