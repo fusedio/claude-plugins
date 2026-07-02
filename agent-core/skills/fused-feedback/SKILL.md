@@ -279,14 +279,32 @@ signal; `close` is "stepped away," not "done." The Monitor stays armed across
 pushes — `TaskStop` it when the collaboration ends. Full loop:
 **[references/parley.md](references/parley.md)**.
 
-## CLI-native comment feedback — `widget agent`
+## CLI-native comment feedback (prefer `widget watch`)
 
 The parley also carries a **comment loop with no flow app** — two terminals and a
 browser. The human pins comments directly onto the widget on the parley page, and
-`fused widget agent` turns each comment into a **file edit** and re-pushes the
-updated view. Use it when the human's feedback is best expressed *on* the widget
-("this axis should be log", "drop this column", "make this the headline number")
-rather than as a form submit.
+each comment becomes a **file edit** that re-pushes the updated view. Use it when
+the human's feedback is best expressed *on* the widget ("this axis should be log",
+"drop this column", "make this the headline number") rather than as a form submit.
+
+There are two ways to action those comments, and **in Claude Code you should
+default to driving them yourself with `widget watch`** — see
+[Driving comments yourself](#driving-comments-yourself), which is the preferred
+path. Reserve `widget agent` (below) for when the human explicitly wants
+comments actioned by an autonomous worker outside this session.
+
+> **⛔ Why `watch`, not `agent`, is the default for feedback mode.** `widget agent`
+> actions each comment by spawning a **fresh `claude -p` worker**. Those workers
+> are **new sessions** — they do **not** inherit this session's loaded skills,
+> conversation context, or the decisions made so far, and we **cannot guarantee**
+> they'll load the right companion skills (`fused-projects`, `fused-widgets`) or
+> understand the widget the way you do. That makes their edits lower-fidelity and
+> easy to get subtly wrong. Driving the comments yourself with `widget watch`
+> keeps **you** — the session that authored the widget and holds the full context
+> — as the single writer. So for feedback mode, **always prefer `widget watch`
+> with a Monitor**; only fall back to `widget agent` on an explicit request.
+
+### `widget agent` — autonomous workers (opt-in only)
 
 ```bash
 # terminal 1 — serve a file-backed widget onto the parley (opens the page)
@@ -304,6 +322,8 @@ pins a comment to a node, and `widget agent` spawns a `claude -p` worker per ope
 comment, edits the backing `.json`, re-pushes so the widget updates in place, and
 marks the comment resolved. Workers run in parallel across disjoint nodes and
 serialize on the same/nested node; the agent is the **single writer** of the file.
+Remember these workers are fresh sessions without this session's context — prefer
+`widget watch` unless the human explicitly asked for autonomous workers.
 
 **Start `agent` before the human comments — ordering matters.** `widget agent`
 reacts to the parley's **live** SSE stream ("the instant a comment appears"); it
@@ -371,15 +391,18 @@ widget. The agent reads `status.projectDir` and **echoes it on every re-push**, 
 `--project-dir` view keeps resolving in `?projectDir=` mode across comment edits
 (without it the re-push would fall back to flat `?dir=` and break the project's UDF
 refs). The `widget agent` verb is separate from `widget watch`/manual planning —
-reach for `agent` when you want comments actioned automatically; drive the parley
-by hand (§ above) when you're authoring successive views yourself.
+in Claude Code, **default to driving the parley by hand with `watch`** (§ below) so
+the context-holding session stays the single writer; reach for `agent` only when
+the human explicitly wants comments actioned by an autonomous worker.
 
-### Driving comments yourself with `widget watch` (no `widget agent`)
+<a name="driving-comments-yourself"></a>
+### Driving comments yourself with `widget watch` — the preferred path
 
-When the human wants **you** — this session — to handle their comments (so edits
-carry the full conversation context) rather than `widget agent` spawning fresh
-`claude -p` workers, run `widget watch` instead of `widget agent` and be the single
-writer yourself. This is a supported mode, but the "never manually push while a
+**This is the default for feedback mode in Claude Code.** You — this session —
+handle each comment, so edits carry the full conversation context and the skills
+you've already loaded (`fused-projects`, `fused-widgets`), instead of a fresh
+`widget agent` worker that has none of that. Run `widget watch` instead of
+`widget agent` and be the single writer yourself. The "never manually push while a
 session is live" caution above still bites — mind the ordering:
 
 1. **Do not run `widget agent` at all** for this widget. If one is already running,
@@ -402,7 +425,9 @@ session is live" caution above still bites — mind the ordering:
 
 The divergence risk in this mode comes from an **earlier stray `widget agent` or a
 push that reset `rev`** while comments were live — start clean (no agent, one
-writer) and it stays consistent.
+writer) and it stays consistent. Since this is the preferred feedback-mode path,
+the clean starting state is the normal one: no `widget agent` in the picture, this
+session as the sole writer.
 
 ## Recipes
 
@@ -475,8 +500,13 @@ config. Check in this order:
   the start — see [Make it appear instantly](#make-it-fast).
 - **Unknown `type` is a hard error** — only use components from the catalog
   ([references/components.md](references/components.md)).
+- **Prefer `widget watch` over `widget agent` for feedback mode** — `widget agent`
+  spawns fresh `claude -p` workers that don't inherit this session's skills or
+  context; drive comments yourself with `watch` so the context-holding session
+  stays the single writer. Only use `agent` on an explicit request.
 - **Parley comments live in memory only** — no disk/event-log persistence, no recovery
   endpoint. A manual `push` over a live comment session **destroys** un-actioned
-  comments; let `widget agent` be the sole re-pusher.
+  comments; whoever is the single writer (you, via `watch`, or `widget agent`) must
+  be the sole re-pusher.
 - **`/api/parley/events` is an infinite SSE stream** — a bare `curl` hangs (exit 143);
   snapshot with `fused widget watch --from all` instead.
