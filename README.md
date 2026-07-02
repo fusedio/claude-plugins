@@ -36,7 +36,6 @@ Both plugins drive the `fused` CLI. Install it once:
 
 ```sh
 uv tool install 'fused[vector]'
-fused workbench claude plugin add   # registers the workbench Claude plugin (legacy SDK)
 ```
 
 Then open a new Claude Code session. `fused` is now permanently on your PATH — Claude can find it in any future session without reinstalling.
@@ -52,7 +51,6 @@ If `uv` is not found, install it first, then re-run the commands above:
 
 ```sh
 uv tool install 'fused[vector]' --upgrade
-fused workbench claude plugin add   # re-register the workbench Claude plugin
 ```
 
 ### Alternative: pip
@@ -61,7 +59,6 @@ If Python 3.10+ is already installed and you prefer not to use `uv`:
 
 ```sh
 pip install --upgrade 'fused[vector]>=2'
-fused workbench claude plugin add   # re-register the workbench Claude plugin
 ```
 
 > **Python 3.9 note:** `pip install fused` on Python 3.9 silently installs `fused 1.x`, which has no `fused` command. Pinning `>=2` makes pip fail loudly instead. Use `uv tool install 'fused[vector]'` above to avoid this entirely.

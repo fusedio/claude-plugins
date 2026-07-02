@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Regenerate fused-plugin/skills/json-ui-schemas/reference.md from the live CLI."""
+"""Regenerate workbench/skills/json-ui-schemas/reference.md from the live CLI."""
 
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-REFERENCE_PATH = Path(__file__).parent.parent / "fused-plugin/skills/json-ui-schemas/reference.md"
+REFERENCE_PATH = Path(__file__).parent.parent / "skills/json-ui-schemas/reference.md"
 
 
 def main():
     result = subprocess.run(
-        ["fused", "json-ui", "schemas"],
+        ["fused", "workbench", "json-ui", "schemas"],
         capture_output=True,
         text=True,
     )

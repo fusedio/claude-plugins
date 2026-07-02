@@ -1,7 +1,5 @@
 # JSON UI component schemas
 
-> **Important:** All properties listed in each schema below go inside the `"props"` key of the widget node. The correct shape is always `{ "type": "<type>", "props": { … }, "children": […] }`. Never place component properties directly on the node object.
-
 ## ai-chat
 
 AI chat for connected UDFs.
@@ -27,7 +25,7 @@ AI chat for connected UDFs.
       "type": "string"
     }
   },
-  "description": "Always-on AI chat for asking questions about UDFs connected to this JSON UI node."
+  "description": "Always-on AI chat for asking questions about UDFs connected to this JSON UI node.\n\n## Example\n\n```json\n{\n  \"type\": \"ai-chat\",\n  \"props\": {\n    \"title\": \"Ask about this data\"\n  }\n}\n```"
 }
 ~~~
 
@@ -118,7 +116,7 @@ Bar chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A bar chart powered by DuckDB SQL queries against UDF outputs. Query must return 'label' and 'value' columns. Uses {{udf_name}} placeholders to reference UDF DataFrames."
+  "description": "A bar chart powered by DuckDB SQL queries against UDF outputs. Query must return 'label' and 'value' columns. Uses {{udf_name}} placeholders to reference UDF DataFrames.\n\n## Example\n\n```json\n{\n  \"type\": \"bar-chart\",\n  \"props\": {\n    \"sql\": \"SELECT neighborhood AS label, COUNT(*) AS value FROM {{listings}} GROUP BY 1 ORDER BY 2 DESC LIMIT 10\",\n    \"title\": \"Listings by Neighborhood\"\n  }\n}\n```\n\n## Example \u2014 horizontal\n\n```json\n{\n  \"type\": \"bar-chart\",\n  \"props\": {\n    \"sql\": \"SELECT city AS label, population AS value FROM {{cities}} ORDER BY 2 DESC\",\n    \"horizontal\": true,\n    \"showValues\": true\n  }\n}\n```"
 }
 ~~~
 
@@ -173,7 +171,7 @@ Clickable button with optional param broadcast.
       "type": "boolean"
     }
   },
-  "description": "A clickable button for triggering actions. If param is provided, broadcasts click count to that canvas parameter."
+  "description": "A clickable button for triggering actions. If `param` is provided, broadcasts a click signal to that canvas parameter.\n\n## Example\n\n```json\n{\n  \"type\": \"button\",\n  \"props\": {\n    \"label\": \"Submit\",\n    \"variant\": \"default\",\n    \"param\": \"submit_count\"\n  }\n}\n```"
 }
 ~~~
 
@@ -236,8 +234,8 @@ Camera input that stores captured photos as data URLs.
       "default": "Capture photo",
       "type": "string"
     },
-    "uploadLabel": {
-      "default": "Upload photo",
+    "sendPhotoLabel": {
+      "default": "Send photo",
       "type": "string"
     },
     "retakeLabel": {
@@ -257,7 +255,7 @@ Camera input that stores captured photos as data URLs.
       "type": "string"
     }
   },
-  "description": "A camera input that captures a photo as a data URL string and can optionally sync with canvas parameters or a form."
+  "description": "A camera input that captures a photo as a data URL string and can optionally sync with canvas parameters or a form.\n\n## Example\n\n```json\n{\n  \"type\": \"camera-input\",\n  \"props\": {\n    \"label\": \"Photo\",\n    \"param\": \"photo_data_url\",\n    \"facingMode\": \"environment\"\n  }\n}\n```"
 }
 ~~~
 
@@ -311,7 +309,7 @@ Code editor with syntax highlighting.
       "type": "string"
     }
   },
-  "description": "Code editor with multi-language syntax highlighting. Syncs content with a canvas parameter."
+  "description": "Code editor with multi-language syntax highlighting. Syncs content with a canvas parameter.\n\n## Example \u2014 SQL\n\n```json\n{\n  \"type\": \"code-editor\",\n  \"props\": {\n    \"param\": \"my_query\",\n    \"language\": \"sql\",\n    \"defaultValue\": \"SELECT * FROM {{my_udf}} LIMIT 10\"\n  }\n}\n```\n\n## Example \u2014 Python\n\n```json\n{\n  \"type\": \"code-editor\",\n  \"props\": {\n    \"param\": \"code\",\n    \"language\": \"python\",\n    \"defaultValue\": \"import pandas as pd\"\n  }\n}\n```"
 }
 ~~~
 
@@ -363,7 +361,7 @@ Color input with optional param sync.
       "type": "string"
     }
   },
-  "description": "A color input that can optionally sync string color values with canvas parameters. Hex strings are recommended for chart and CSS interoperability."
+  "description": "A color input that can optionally sync string color values with canvas parameters. Hex strings are recommended for chart and CSS interoperability.\n\n## Example\n\n```json\n{\n  \"type\": \"color-input\",\n  \"props\": {\n    \"label\": \"Highlight color\",\n    \"param\": \"highlight_color\",\n    \"defaultValue\": \"#2563eb\"\n  }\n}\n```"
 }
 ~~~
 
@@ -420,7 +418,7 @@ Date, time, or datetime input with optional param sync.
       "type": "string"
     }
   },
-  "description": "A date, time, or local datetime input that can optionally sync string values with canvas parameters. Values are stored without timezone conversion."
+  "description": "A date, time, or local datetime input that can optionally sync string values with canvas parameters. Values are stored without timezone conversion.\n\n## Example\n\n```json\n{\n  \"type\": \"datetime-input\",\n  \"props\": {\n    \"label\": \"Start date\",\n    \"param\": \"start_date\",\n    \"mode\": \"date\",\n    \"defaultValue\": \"2026-01-01\"\n  }\n}\n```"
 }
 ~~~
 
@@ -437,7 +435,7 @@ Container for grouping child elements.
       "type": "string"
     }
   },
-  "description": "A generic container for grouping elements. Can contain any child components. Defaults to a flex column."
+  "description": "A generic container for grouping elements. Can contain any child components. Defaults to a flex column.\n\n## Example\n\n```json\n{\n  \"type\": \"div\",\n  \"props\": { \"style\": \"display: flex; gap: 8px; padding: 16px\" },\n  \"children\": [\n    { \"type\": \"text-input\", \"props\": { \"label\": \"Name\", \"param\": \"name\" } },\n    { \"type\": \"button\", \"props\": { \"label\": \"Submit\", \"param\": \"submit\" } }\n  ]\n}\n```"
 }
 ~~~
 
@@ -495,7 +493,7 @@ Donut chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A donut chart powered by DuckDB SQL. Query must return label and value columns."
+  "description": "A donut chart powered by DuckDB SQL. Query must return label and value columns.\n\n## Example\n\n```json\n{\n  \"type\": \"donut-chart\",\n  \"props\": {\n    \"sql\": \"SELECT room_type AS label, COUNT(*) AS value FROM {{listings}} GROUP BY 1\",\n    \"title\": \"Listings by Room Type\"\n  }\n}\n```"
 }
 ~~~
 
@@ -588,13 +586,89 @@ Select dropdown with SQL or static options.
       "description": "If true, the dropdown does not auto-select the first option when no defaultValue is provided. The param starts cleared/null.",
       "type": "boolean"
     },
+    "allowInvalidValue": {
+      "default": false,
+      "description": "If true, preserves param values that are not present in the current options. If false, clears invalid param values.",
+      "type": "boolean"
+    },
     "searchable": {
       "default": false,
       "description": "If true, shows a search input inside the dropdown panel.",
       "type": "boolean"
     }
   },
-  "description": "A dropdown that syncs with canvas parameters. Prefer sql (DuckDB query with {{udf_name}} placeholders returning 'value' and 'label' columns) for dynamic options from UDF DataFrames. Fall back to options array for static choices."
+  "description": "A dropdown that syncs with canvas parameters. Prefer `sql` (a DuckDB query with `{{udf_name}}` placeholders returning `value` and `label` columns) for dynamic options from UDF DataFrames. Fall back to the `options` array for static choices.\n\n## Example \u2014 SQL (dynamic)\n\n```json\n{\n  \"type\": \"dropdown\",\n  \"props\": {\n    \"label\": \"Select City\",\n    \"param\": \"city\",\n    \"sql\": \"SELECT DISTINCT city AS value, city AS label FROM {{my_udf}} ORDER BY city\"\n  }\n}\n```\n\n## Example \u2014 static options\n\n```json\n{\n  \"type\": \"dropdown\",\n  \"props\": {\n    \"label\": \"Select Country\",\n    \"param\": \"country\",\n    \"options\": [\n      { \"value\": \"us\", \"label\": \"United States\" },\n      { \"value\": \"uk\", \"label\": \"United Kingdom\" }\n    ]\n  }\n}\n```"
+}
+~~~
+
+## file-upload
+
+Upload files to S3/fd/gs from a browser picker or param content.
+
+~~~json
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "description": "Label text displayed above the file upload widget",
+      "type": "string"
+    },
+    "destinationPath": {
+      "type": "string",
+      "description": "Destination storage path (s3://, fd://, or gs://). Supports $param substitution."
+    },
+    "sourceMode": {
+      "default": "picker",
+      "description": "Source for files: picker (browser file picker) or content (param with base64 JSON).",
+      "type": "string",
+      "enum": [
+        "picker",
+        "content"
+      ]
+    },
+    "contentParam": {
+      "description": "Canvas parameter containing file content as JSON: [{ name, content (base64), contentType? }] or a single object.",
+      "type": "string"
+    },
+    "param": {
+      "description": "Optional output parameter. On success, broadcasts a JSON array of { path, fileName } objects.",
+      "type": "string"
+    },
+    "autoUpload": {
+      "description": "When true, uploads automatically once the source is ready. Defaults to false for picker and true for content mode.",
+      "type": "boolean"
+    },
+    "uploadLabel": {
+      "default": "Upload",
+      "type": "string"
+    },
+    "accept": {
+      "description": "Optional accept attribute for the browser file picker.",
+      "type": "string"
+    },
+    "multiple": {
+      "default": true,
+      "description": "Allow selecting multiple files in picker mode.",
+      "type": "boolean"
+    },
+    "disabled": {
+      "default": false,
+      "type": "boolean"
+    },
+    "readOnly": {
+      "default": false,
+      "description": "If true, blocks local interactions.",
+      "type": "boolean"
+    },
+    "style": {
+      "description": "Inline CSS styles as a plain CSS string (e.g., \"color: red; font-size: 16px\")",
+      "type": "string"
+    }
+  },
+  "required": [
+    "destinationPath"
+  ],
+  "description": "Uploads files to a configured storage destination after validating write access for the current user token."
 }
 ~~~
 
@@ -644,7 +718,7 @@ Form container that submits child values together.
       "type": "string"
     }
   },
-  "description": "A form container that collects child input values and submits on button click. If form 'param' is provided, all child values are broadcast as one object to that parameter. If omitted, each child field parameter is broadcast individually. Children should use 'param' prop to register with the form. It supports input components such as text-input, text-area, number-input, datetime-input, camera-input, color-input, dropdown, slider, and text."
+  "description": "A form container that collects child input values and submits them on button click. If `param` is provided, all child values are broadcast as one JSON object to that parameter. If omitted, each child field is broadcast individually. Children use their own `param` prop to register with the form. Supported child types: text-input, text-area, number-input, datetime-input, camera-input, color-input, dropdown, slider, and text.\n\n## Example\n\n```json\n{\n  \"type\": \"form\",\n  \"props\": {\n    \"param\": \"form_data\",\n    \"submitLabel\": \"Submit\"\n  },\n  \"children\": [\n    { \"type\": \"text-input\", \"props\": { \"label\": \"Name\", \"param\": \"user_name\" } },\n    {\n      \"type\": \"dropdown\",\n      \"props\": {\n        \"label\": \"City\",\n        \"param\": \"city\",\n        \"sql\": \"SELECT DISTINCT city AS value, city AS label FROM {{my_udf}} ORDER BY city\"\n      }\n    }\n  ]\n}\n```"
 }
 ~~~
 
@@ -884,7 +958,7 @@ Interactive map with tile and vector layers.
       "type": "string"
     }
   },
-  "description": "Interactive map with Mapbox GL (mvt, raster, geojson) and deck.gl (h3, heatmap, arc, scatterplot) layers."
+  "description": "Interactive map with Mapbox GL (mvt, raster, geojson) and deck.gl (h3, heatmap, arc, scatterplot) layers.\n\n## Example \u2014 MVT tile layer\n\n```json\n{\n  \"type\": \"fused-map\",\n  \"props\": {\n    \"layers\": [{\n      \"id\": \"counties\",\n      \"type\": \"mvt\",\n      \"tileUrl\": \"https://tiles.fused.io/public/my_tileset/{z}/{x}/{y}\",\n      \"style\": { \"fillColor\": [100, 150, 200], \"opacity\": 0.6 }\n    }]\n  }\n}\n```\n\n## Example \u2014 SQL with lat/lng points\n\n```json\n{\n  \"type\": \"fused-map\",\n  \"props\": {\n    \"layers\": [{\n      \"id\": \"sites\",\n      \"type\": \"geojson\",\n      \"sql\": \"SELECT name, lat, lng FROM {{my_udf}}\",\n      \"style\": { \"fillColor\": [255, 80, 0], \"pointRadius\": 8 }\n    }]\n  }\n}\n```\n\n## Example \u2014 raster tile layer\n\n```json\n{\n  \"type\": \"fused-map\",\n  \"props\": {\n    \"layers\": [{\n      \"id\": \"seismic\",\n      \"type\": \"raster\",\n      \"tileUrl\": \"https://udf.ai/<token>/run/tiles/{z}/{x}/{y}?format=png\",\n      \"style\": { \"opacity\": 0.8 }\n    }]\n  }\n}\n```\n\nRaster layers render through a Mapbox raster source, so `tileUrl` must be a publicly fetchable XYZ endpoint (a Fused UDF tile endpoint or any external raster service); only `opacity` and `visible` apply."
 }
 ~~~
 
@@ -999,7 +1073,7 @@ Image-card gallery input with horizontal, vertical, or grid layout and SQL or st
       "type": "string"
     }
   },
-  "description": "An image-card gallery input with horizontal, vertical, or grid layout that syncs with canvas parameters. Prefer sql (DuckDB query with {{udf_name}} placeholders returning value, title, and image columns) for dynamic options from UDF DataFrames. Fall back to options array for static choices."
+  "description": "An image-card gallery input with horizontal, vertical, or grid layout that syncs with canvas parameters. Prefer sql (DuckDB query with {{udf_name}} placeholders returning value, title, and image columns) for dynamic options from UDF DataFrames. Fall back to options array for static choices.\n\n## Example \u2014 SQL\n\n```json\n{\n  \"type\": \"gallery-input\",\n  \"props\": {\n    \"label\": \"Select a dataset\",\n    \"param\": \"dataset\",\n    \"sql\": \"SELECT id AS value, name AS title, thumbnail AS image FROM {{datasets}}\"\n  }\n}\n```\n\n## Example \u2014 static options\n\n```json\n{\n  \"type\": \"gallery-input\",\n  \"props\": {\n    \"label\": \"Select style\",\n    \"param\": \"map_style\",\n    \"options\": [\n      { \"value\": \"dark\", \"title\": \"Dark\", \"image\": \"https://example.com/dark.png\" },\n      { \"value\": \"light\", \"title\": \"Light\", \"image\": \"https://example.com/light.png\" }\n    ]\n  }\n}\n```"
 }
 ~~~
 
@@ -1060,7 +1134,7 @@ Heatmap chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A matrix heatmap powered by DuckDB SQL. Query must return x, y, and value columns."
+  "description": "A matrix heatmap powered by DuckDB SQL. Query must return x, y, and value columns.\n\n## Example\n\n```json\n{\n  \"type\": \"heatmap-chart\",\n  \"props\": {\n    \"sql\": \"SELECT day_of_week AS x, hour AS y, COUNT(*) AS value FROM {{events}} GROUP BY 1, 2\",\n    \"title\": \"Events by Day and Hour\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1074,7 +1148,7 @@ Sandboxed HTML renderer with $param and {{udf}} substitution and fusedCanvas API
   "properties": {
     "value": {
       "default": "",
-      "description": "Raw HTML value. Supports $param_name placeholders for dynamic values and {{udf_name}} to inline stringified UDF output.",
+      "description": "Raw HTML value. Supports $param_name placeholders for dynamic values and {{udf_name}} to inline HTML template or stringified UDF output.",
       "type": "string"
     },
     "style": {
@@ -1082,7 +1156,7 @@ Sandboxed HTML renderer with $param and {{udf}} substitution and fusedCanvas API
       "type": "string"
     }
   },
-  "description": "Sandboxed HTML with $param_name and {{udf_name}} substitution. Exposes fusedCanvas.setParam(name, value) / .clearParam(name) for canvas communication."
+  "description": "Sandboxed HTML with $param_name and {{udf_name}} substitution. Exposes fusedCanvas.setParam(name, value) / .clearParam(name) for canvas communication.\n\n## Example\n\n```json\n{\n  \"type\": \"html\",\n  \"props\": {\n    \"value\": \"<h2>Hello, $user_name!</h2><p>Selected city: <b>$city</b></p>\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1114,13 +1188,13 @@ Embed a web page or HTML-returning UDF in an iframe using http(s) URLs, $param U
   "required": [
     "src"
   ],
-  "description": "Embeds a web page or HTML-returning UDF in an iframe. Use for dashboards, docs, or any site that permits framing."
+  "description": "Embeds a web page or HTML-returning UDF in an iframe. Use for dashboards, docs, or any site that permits framing.\n\n## Example\n\n```json\n{\n  \"type\": \"iframe\",\n  \"props\": {\n    \"src\": \"https://docs.fused.io\",\n    \"title\": \"Fused documentation\",\n    \"style\": \"border-radius: 8px; height: 500px\"\n  }\n}\n```"
 }
 ~~~
 
 ## image
 
-Display an image from a URL or base64 data URL.
+Display an image from a URL, base64 data URL, or signable storage path.
 
 ~~~json
 {
@@ -1128,7 +1202,7 @@ Display an image from a URL or base64 data URL.
   "properties": {
     "src": {
       "type": "string",
-      "description": "Image URL or base64 data URL"
+      "description": "Image URL, base64 data URL, or signable storage path (e.g., \"s3://bucket/image.png\")"
     },
     "alt": {
       "description": "Accessible description of the image",
@@ -1154,7 +1228,36 @@ Display an image from a URL or base64 data URL.
   "required": [
     "src"
   ],
-  "description": "Displays an image from a URL or base64 data URL. Useful for showing pasted images, charts, or any visual asset."
+  "description": "Displays an image from a URL, base64 data URL, or signable storage path. Useful for showing pasted images, charts, or any visual asset.\n\n## Example\n\n```json\n{\n  \"type\": \"image\",\n  \"props\": {\n    \"src\": \"https://example.com/map.png\",\n    \"alt\": \"Map preview\",\n    \"objectFit\": \"contain\"\n  }\n}\n```"
+}
+~~~
+
+## kepler-map
+
+Embed the Kepler.gl viewer for a workspace UDF. Use {{udf_1}} to bind the connected UDF via a slot, or supply a plain UDF name as a fallback.
+
+~~~json
+{
+  "type": "object",
+  "properties": {
+    "udf": {
+      "type": "string",
+      "minLength": 1,
+      "description": "UDF slot placeholder (e.g. {{udf_1}}) or plain UDF name whose results should be displayed in Kepler.gl."
+    },
+    "title": {
+      "description": "Accessible title for the embedded Kepler.gl map",
+      "type": "string"
+    },
+    "style": {
+      "description": "Inline CSS styles as a plain CSS string (e.g., \"min-height: 480px; border-radius: 8px\")",
+      "type": "string"
+    }
+  },
+  "required": [
+    "udf"
+  ],
+  "description": "Embeds the Kepler.gl viewer for a UDF in the workspace. Accepts a {{udf_N}} slot placeholder or a plain UDF name. Uses a parquet share URL when the canvas is shared; falls back to a temporary GeoJSON upload otherwise.\n\n## Example\n\n```json\n{\n  \"type\": \"kepler-map\",\n  \"props\": {\n    \"udf\": \"{{my_udf}}\",\n    \"title\": \"My Kepler Map\",\n    \"style\": \"min-height: 480px; border-radius: 8px;\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1279,7 +1382,7 @@ Line/area chart for time series driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A line/area chart for time series data, powered by DuckDB SQL queries. Query must return 'label' and 'value' columns. Add a 'series' column for multiple lines."
+  "description": "A line/area chart for time series data, powered by DuckDB SQL queries. Query must return 'label' and 'value' columns. Add a 'series' column for multiple lines.\n\n## Example\n\n```json\n{\n  \"type\": \"line-chart\",\n  \"props\": {\n    \"sql\": \"SELECT date AS label, revenue AS value FROM {{sales}} ORDER BY 1\",\n    \"title\": \"Revenue Over Time\"\n  }\n}\n```\n\n## Example \u2014 multi-series\n\n```json\n{\n  \"type\": \"line-chart\",\n  \"props\": {\n    \"sql\": \"SELECT date AS label, count AS value, category AS series FROM {{events}} ORDER BY 1, 3\",\n    \"title\": \"Events by Category\",\n    \"showArea\": true,\n    \"curveType\": \"smooth\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1342,6 +1445,10 @@ Live UDF map.
                   "type": "string"
                 },
                 "additionalProperties": {}
+              },
+              "tile": {
+                "description": "Connect as tile mode. By default layers connect as viewport (fetches data for the current map view as a single request).",
+                "type": "boolean"
               }
             },
             "required": [
@@ -1365,12 +1472,17 @@ Live UDF map.
         "satellite",
         "blank"
       ]
+    },
+    "autoFit": {
+      "default": true,
+      "description": "Automatically fit the map viewport to the loaded data bounds. When true, the map zooms once to frame the union of all layers' data after they first load, then leaves the viewport under user control (it does not re-fit on later pans or re-runs). When false, the map opens at centerLng/centerLat/zoom.",
+      "type": "boolean"
     }
   },
   "required": [
     "layers"
   ],
-  "description": "Interactive Mapbox map that syncs viewport bounds [west, south, east, north] with a canvas parameter. Supports auto-send on pan/zoom or manual send via button."
+  "description": "Interactive Mapbox map that renders live UDF layers. UDF names must use `{{double-brace}}` syntax. A UDF that returns a GeoDataFrame renders by default. A plain DataFrame renders only with a matching vizConfig \u2014 e.g. a DataFrame with an H3 `hex` column rendered via a `hexLayer` (H3HexagonLayer). A plain DataFrame with only lat/lon columns won't render here; use the `fused-map` widget's geojson layer for that.\n\n## Example \u2014 points\n\n```json\n{\n  \"type\": \"map\",\n  \"props\": {\n    \"centerLng\": -122.43,\n    \"centerLat\": 37.76,\n    \"zoom\": 11,\n    \"mapStyle\": \"dark\",\n    \"layers\": [\"{{my_udf}}\"]\n  }\n}\n```\n\n## Example \u2014 polygons\n\n```json\n{\n  \"type\": \"map\",\n  \"props\": {\n    \"centerLng\": -74,\n    \"centerLat\": 40.7,\n    \"zoom\": 10,\n    \"mapStyle\": \"dark\",\n    \"sendParam\": true,\n    \"autoFit\": true,\n    \"layers\": [\n      {\n        \"udf\": \"{{my_udf}}\"\n      }\n    ]\n  }\n}\n```\n\n## Example \u2014 tile layer\n\n```json\n{\n  \"type\": \"map\",\n  \"props\": {\n    \"layers\": [\n      {\n        \"udf\": \"{{my_udf}}\",\n        \"tile\": true,\n        \"vizConfig\": {\n          \"tileLayer\": {\n            \"@@type\": \"TileLayer\",\n            \"minZoom\": 0,\n            \"maxZoom\": 19,\n            \"tileSize\": 256\n          },\n          \"vectorLayer\": {\n            \"@@type\": \"GeoJsonLayer\",\n            \"stroked\": true,\n            \"filled\": false,\n            \"lineWidthMinPixels\": 1\n          }\n        }\n      }\n    ]\n  }\n}\n```\n\n## Example \u2014 H3 hexagons (plain DataFrame with a `hex` column)\n\n```json\n{\n  \"type\": \"map\",\n  \"props\": {\n    \"layers\": [\n      {\n        \"udf\": \"{{my_h3_udf}}\",\n        \"vizConfig\": {\n          \"hexLayer\": {\n            \"@@type\": \"H3HexagonLayer\",\n            \"stroked\": true,\n            \"filled\": true,\n            \"pickable\": true,\n            \"extruded\": false,\n            \"opacity\": 1,\n            \"coverage\": 0.9,\n            \"lineWidthMinPixels\": 5,\n            \"getHexagon\": \"@@=properties.hex\",\n            \"getFillColor\": [255, 165, 0, 180],\n            \"getLineColor\": [200, 200, 200, 255]\n          }\n        }\n      }\n    ]\n  }\n}\n```\n\n## Example \u2014 raster tile layer\n\n```json\n{\n  \"type\": \"map\",\n  \"props\": {\n    \"centerLng\": -122.43,\n    \"centerLat\": 37.76,\n    \"zoom\": 11,\n    \"mapStyle\": \"dark\",\n    \"layers\": [\n      {\n        \"udf\": \"{{my_raster_udf}}\",\n        \"tile\": true,\n        \"vizConfig\": {\n          \"tileLayer\": { \"@@type\": \"TileLayer\", \"minZoom\": 0, \"maxZoom\": 19, \"tileSize\": 256 },\n          \"rasterLayer\": { \"@@type\": \"BitmapLayer\", \"opacity\": 0.7 }\n        }\n      }\n    ]\n  }\n}\n```\n\nHere `my_raster_udf` returns a raster array (e.g. via `arr_to_plasma`)."
 }
 ~~~
 
@@ -1428,7 +1540,7 @@ Map that syncs viewport bounds to param.
       "type": "string"
     }
   },
-  "description": "Interactive Mapbox map that syncs viewport bounds [west, south, east, north] with a canvas parameter. Supports auto-send on pan/zoom or manual send via button."
+  "description": "Interactive Mapbox map that syncs viewport bounds [west, south, east, north] with a canvas parameter. Supports auto-send on pan/zoom or manual send via button.\n\n## Example\n\n```json\n{\n  \"type\": \"map-bounds\",\n  \"props\": {\n    \"param\": \"viewport\",\n    \"centerLng\": -74,\n    \"centerLat\": 40.7,\n    \"zoom\": 12,\n    \"autoSend\": true\n  }\n}\n```"
 }
 ~~~
 
@@ -1574,7 +1686,7 @@ Map that emits H3 cell at center.
       "type": "string"
     }
   },
-  "description": "Interactive map that emits the H3 hex cell at the map center. Resolution can be fixed or auto-derived from zoom."
+  "description": "Interactive map that emits the H3 hex cell at the map center. Resolution can be fixed or auto-derived from zoom.\n\n## Example \u2014 auto-resolution, send on move\n\n```json\n{\n  \"type\": \"map-h3\",\n  \"props\": {\n    \"param\": \"hex_id\",\n    \"autoSend\": true,\n    \"sendOnMove\": true\n  }\n}\n```\n\n## Example \u2014 fixed resolution\n\n```json\n{\n  \"type\": \"map-h3\",\n  \"props\": {\n    \"param\": \"hex_id\",\n    \"h3Res\": 7,\n    \"centerLng\": -74,\n    \"centerLat\": 40.7\n  }\n}\n```"
 }
 ~~~
 
@@ -1631,7 +1743,7 @@ Dashboard metric card with formatted value.
       "type": "string"
     }
   },
-  "description": "Metric card for dashboards. Shows a single large formatted value from SQL, $param substitution in value, or a static value."
+  "description": "Metric card for dashboards. Shows a single large formatted value from SQL, $param substitution in value, or a static value.\n\n## Example \u2014 SQL\n\n```json\n{\n  \"type\": \"metric\",\n  \"props\": {\n    \"sql\": \"SELECT COUNT(*) FROM {{my_udf}}\",\n    \"label\": \"Total Records\",\n    \"format\": \"compact\"\n  }\n}\n```\n\n## Example \u2014 static / param\n\n```json\n{\n  \"type\": \"metric\",\n  \"props\": {\n    \"value\": \"$record_count\",\n    \"label\": \"Records\",\n    \"suffix\": \" rows\",\n    \"format\": \"comma\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1683,7 +1795,116 @@ Number input with optional param sync.
       "type": "string"
     }
   },
-  "description": "A numeric input that can optionally sync valid number values with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular number input."
+  "description": "A numeric input that can optionally sync valid number values with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular number input.\n\n## Example\n\n```json\n{\n  \"type\": \"number-input\",\n  \"props\": {\n    \"label\": \"Max price\",\n    \"param\": \"max_price\",\n    \"min\": 0,\n    \"max\": 1000,\n    \"step\": 50,\n    \"defaultValue\": 500\n  }\n}\n```"
+}
+~~~
+
+## pdf-gallery-viewer
+
+Gallery viewer with thumbnail rail, page preview, navigation, and PDF download from SQL or static pages.
+
+~~~json
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "description": "Label text displayed above the widget",
+      "type": "string"
+    },
+    "sql": {
+      "description": "DuckDB SQL query with {{udf_name}} and $param_name placeholders. Must return value, title, and image columns. Takes precedence over pages.",
+      "type": "string"
+    },
+    "pages": {
+      "description": "Static array of pages. Used when sql is not provided or when sql fails.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "Title displayed under the thumbnail"
+          },
+          "image": {
+            "type": "string",
+            "description": "Image URL or base64 data URL used for thumbnail, preview, and PDF export"
+          }
+        },
+        "required": [
+          "value",
+          "title",
+          "image"
+        ],
+        "description": "A single page with value, title, and image."
+      }
+    },
+    "defaultPageIndex": {
+      "default": 0,
+      "description": "Initial selected page index (0-based).",
+      "type": "number"
+    },
+    "mode": {
+      "default": "vertical",
+      "description": "Layout mode. vertical places thumbnails on the left; horizontal places thumbnails on top.",
+      "type": "string",
+      "enum": [
+        "vertical",
+        "horizontal"
+      ]
+    },
+    "thumbnailWidth": {
+      "default": 120,
+      "description": "Thumbnail card width in pixels.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "thumbnailHeight": {
+      "default": 90,
+      "description": "Thumbnail card height in pixels.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "previewHeight": {
+      "default": 400,
+      "description": "Preview pane height in pixels.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "pdfFileName": {
+      "default": "document.pdf",
+      "description": "Downloaded PDF file name.",
+      "type": "string"
+    },
+    "downloadEnabled": {
+      "default": true,
+      "description": "If true, shows the download PDF button in the preview toolbar.",
+      "type": "boolean"
+    },
+    "navigationEnabled": {
+      "default": true,
+      "description": "If true, shows previous and next page buttons in the preview toolbar.",
+      "type": "boolean"
+    },
+    "style": {
+      "description": "Inline CSS styles as a plain CSS string (e.g., \"height: 100%; min-height: 480px\")",
+      "type": "string"
+    }
+  },
+  "description": "PDF/gallery viewer with thumbnail rail, full-page preview, navigation, and browser-side PDF download. Prefer sql for dynamic pages from UDF DataFrames; fall back to pages array for static data."
 }
 ~~~
 
@@ -1787,7 +2008,7 @@ Scatter chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A scatter chart powered by DuckDB SQL. Query must return x and y numeric columns."
+  "description": "A scatter chart powered by DuckDB SQL. Query must return x and y numeric columns.\n\n## Example\n\n```json\n{\n  \"type\": \"scatter-chart\",\n  \"props\": {\n    \"sql\": \"SELECT price AS x, rating AS y FROM {{listings}}\",\n    \"title\": \"Price vs. Rating\"\n  }\n}\n```"
 }
 ~~~
 
@@ -1831,7 +2052,8 @@ A slider that can optionally sync with canvas parameters. If param is provided, 
       "description": "Inline CSS styles as a plain CSS string (e.g., \"color: red; font-size: 16px\")",
       "type": "string"
     }
-  }
+  },
+  "description": "A slider that syncs with canvas parameters. Works standalone or nested inside a `form`. Broadcasts value changes on a debounced basis.\n\n## Example\n\n```json\n{\n  \"type\": \"slider\",\n  \"props\": {\n    \"label\": \"Max price\",\n    \"param\": \"max_price\",\n    \"min\": 0,\n    \"max\": 1000,\n    \"step\": 50,\n    \"defaultValue\": 500\n  }\n}\n```"
 }
 ~~~
 
@@ -1864,7 +2086,7 @@ Named SQL source for descendant components.
     "sql",
     "name"
   ],
-  "description": "Runs a DuckDB query and exposes its result as a named SQL source to descendant components."
+  "description": "Runs a DuckDB query and exposes its result as a named SQL source to descendant components. Children reference the result via {{name}}.\n\n## Example\n\n```json\n{\n  \"type\": \"sql-runner\",\n  \"props\": {\n    \"name\": \"filtered_data\",\n    \"sql\": \"SELECT * FROM {{my_udf}} WHERE price < $max_price\",\n    \"maxRows\": 10000\n  },\n  \"children\": [\n    { \"type\": \"bar-chart\", \"props\": { \"sql\": \"SELECT category AS label, COUNT(*) AS value FROM {{filtered_data}} GROUP BY 1\" } }\n  ]\n}\n```"
 }
 ~~~
 
@@ -1946,7 +2168,7 @@ Table rendered from a DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "Renders the results of a DuckDB SQL query in a table similar to the UDF node Data Table. Supports {{udf_name}} placeholders and $param_name canvas parameters. Optional AI chat can author the SQL for you."
+  "description": "Renders the results of a DuckDB SQL query in a table similar to the UDF node Data Table. Supports {{udf_name}} placeholders and $param_name canvas parameters. Optional AI chat can author the SQL for you.\n\n## Example\n\n```json\n{\n  \"type\": \"sql-table\",\n  \"props\": {\n    \"sql\": \"SELECT * FROM {{my_udf}} WHERE city = $city LIMIT 100\",\n    \"title\": \"Results\",\n    \"sortable\": true,\n    \"maxRows\": 500\n  }\n}\n```"
 }
 ~~~
 
@@ -2046,7 +2268,7 @@ Stacked area chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A stacked area chart powered by DuckDB SQL. Query should return label, series, and value."
+  "description": "A stacked area chart powered by DuckDB SQL. Query should return label, series, and value.\n\n## Example\n\n```json\n{\n  \"type\": \"stacked-area-chart\",\n  \"props\": {\n    \"sql\": \"SELECT month AS label, revenue AS value, category AS series FROM {{sales}} ORDER BY 1\",\n    \"title\": \"Revenue by Category\"\n  }\n}\n```"
 }
 ~~~
 
@@ -2118,7 +2340,7 @@ Stacked bar chart driven by DuckDB SQL query.
   "required": [
     "sql"
   ],
-  "description": "A stacked bar chart powered by DuckDB SQL. Query should return label, series, and value."
+  "description": "A stacked bar chart powered by DuckDB SQL. Query should return label, series, and value.\n\n## Example\n\n```json\n{\n  \"type\": \"stacked-bar-chart\",\n  \"props\": {\n    \"sql\": \"SELECT quarter AS label, revenue AS value, region AS series FROM {{sales}} ORDER BY 1\",\n    \"title\": \"Revenue by Region\"\n  }\n}\n```"
 }
 ~~~
 
@@ -2159,7 +2381,7 @@ Static or dynamic text display.
       "type": "string"
     }
   },
-  "description": "Displays text values. Can show static values, dynamic values from message parameters, or results from DuckDB SQL queries. Priority: sql > value."
+  "description": "Displays text values. Can show static values, dynamic values from message parameters, or results from DuckDB SQL queries. Priority: sql > value.\n\n## Example \u2014 static / param\n\n```json\n{\n  \"type\": \"text\",\n  \"props\": {\n    \"value\": \"Selected city: $city\",\n    \"variant\": \"h3\"\n  }\n}\n```\n\n## Example \u2014 SQL\n\n```json\n{\n  \"type\": \"text\",\n  \"props\": {\n    \"sql\": \"SELECT COUNT(*) || ' records' FROM {{my_udf}}\",\n    \"variant\": \"muted\"\n  }\n}\n```"
 }
 ~~~
 
@@ -2187,6 +2409,22 @@ Multi-line text input with optional param sync.
       "default": "",
       "type": "string"
     },
+    "submitMode": {
+      "default": "type",
+      "type": "string",
+      "enum": [
+        "type",
+        "focus",
+        "submit"
+      ],
+      "description": "Controls when the text area value is sent: type sends while typing, focus sends on blur, and submit sends only from the inline submit button or Enter key."
+    },
+    "debounceMs": {
+      "default": 300,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
     "rows": {
       "default": 4,
       "type": "integer",
@@ -2211,7 +2449,7 @@ Multi-line text input with optional param sync.
       "type": "string"
     }
   },
-  "description": "A multi-line text input that can optionally sync with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular text area."
+  "description": "A multi-line text input that can optionally sync with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular text area.\n\n## Example\n\n```json\n{\n  \"type\": \"text-area\",\n  \"props\": {\n    \"label\": \"Notes\",\n    \"param\": \"notes\",\n    \"placeholder\": \"Enter notes...\",\n    \"rows\": 4\n  }\n}\n```"
 }
 ~~~
 
@@ -2239,6 +2477,22 @@ Text input with optional param sync.
       "default": "",
       "type": "string"
     },
+    "submitMode": {
+      "default": "type",
+      "type": "string",
+      "enum": [
+        "type",
+        "focus",
+        "submit"
+      ],
+      "description": "Controls when the input value is sent: type sends while typing, focus sends on blur, and submit sends only from the inline submit button or Enter key."
+    },
+    "debounceMs": {
+      "default": 300,
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
     "disabled": {
       "default": false,
       "type": "boolean"
@@ -2252,7 +2506,7 @@ Text input with optional param sync.
       "type": "string"
     }
   },
-  "description": "A text input field that can optionally sync with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular input."
+  "description": "A text input field that can optionally sync with canvas parameters. If param is provided, syncs with that parameter or form; otherwise works as a regular input.\n\n## Example\n\n```json\n{\n  \"type\": \"text-input\",\n  \"props\": {\n    \"label\": \"Search\",\n    \"param\": \"search_query\",\n    \"placeholder\": \"Enter search term...\"\n  }\n}\n```"
 }
 ~~~
 
@@ -2284,7 +2538,76 @@ Execute JS in a sandbox, broadcast result to a param.
     "param",
     "method"
   ],
-  "description": "Non-visual component that runs JavaScript in a sandboxed iframe and broadcasts the return value to a canvas param. Use $param_name to inject canvas param values and {{udf_name}} to inject UDF result rows. UDF data is substituted as a JSON object of column arrays, e.g. {\"col1\":[\"a\",\"b\"],\"col2\":[1,2]}. The method string should be a self-invoking arrow function, e.g. \"()=>{ return $input; }\"."
+  "description": "Non-visual component that runs JavaScript in a sandboxed iframe and broadcasts the return value to a canvas param. Use $param_name to inject canvas param values and {{udf_name}} to inject UDF result rows. UDF data is substituted as a JSON object of column arrays. The method string must be a no-argument arrow function that explicitly returns a value.\n\n## Example\n\n```json\n{\n  \"type\": \"transformer\",\n  \"props\": {\n    \"param\": \"price_tier\",\n    \"method\": \"() => { const p = Number($max_price); if (p <= 100) return 'Budget'; if (p <= 300) return 'Mid-range'; return 'Luxury'; }\"\n  }\n}\n```"
+}
+~~~
+
+## video
+
+Display a video from a URL, base64 data URL, or signable storage path.
+
+~~~json
+{
+  "type": "object",
+  "properties": {
+    "src": {
+      "type": "string",
+      "description": "Video URL, base64 data URL, or signable storage path (e.g., \"s3://bucket/clip.mp4\")"
+    },
+    "alt": {
+      "description": "Accessible description of the video",
+      "type": "string"
+    },
+    "objectFit": {
+      "default": "contain",
+      "description": "How the video fits its container",
+      "type": "string",
+      "enum": [
+        "contain",
+        "cover",
+        "fill",
+        "none",
+        "scale-down"
+      ]
+    },
+    "controls": {
+      "default": true,
+      "description": "Whether to show native playback controls",
+      "type": "boolean"
+    },
+    "autoPlay": {
+      "default": false,
+      "description": "Whether the video starts playing automatically",
+      "type": "boolean"
+    },
+    "loop": {
+      "default": false,
+      "description": "Whether the video loops after ending",
+      "type": "boolean"
+    },
+    "muted": {
+      "default": false,
+      "description": "Whether the video is muted (required for autoplay in most browsers)",
+      "type": "boolean"
+    },
+    "playsInline": {
+      "default": true,
+      "description": "Whether the video should play inline on mobile devices",
+      "type": "boolean"
+    },
+    "poster": {
+      "description": "Poster image URL shown before playback starts",
+      "type": "string"
+    },
+    "style": {
+      "description": "Inline CSS styles as a plain CSS string (e.g., \"border-radius: 8px\")",
+      "type": "string"
+    }
+  },
+  "required": [
+    "src"
+  ],
+  "description": "Displays a video from a URL, base64 data URL, or signable storage path."
 }
 ~~~
 
@@ -2346,6 +2669,8 @@ Builds and renders a widget from a param-supplied or inline definition object.
         "GPT OSS 120B",
         "Kimi K2.5",
         "GPT-5.4",
+        "GPT-5.5",
+        "Gemini 3.5 Flash",
         "Gemini 3 Flash Preview",
         "Gemini 3 Pro Preview"
       ]
@@ -2374,6 +2699,6 @@ Builds and renders a widget from a param-supplied or inline definition object.
   "required": [
     "defaultValue"
   ],
-  "description": "Renders a widget definition received via a canvas param or inline. Use \"$param_name\" to render whatever a dropdown (or other sender) broadcasts. Set showEditor to enable a live JSON editor panel."
+  "description": "Renders a widget definition received via a canvas param or inline. Use \"$param_name\" to render whatever a dropdown (or other sender) broadcasts. Set showEditor to enable a live JSON editor panel.\n\n## Example \u2014 from param\n\n```json\n{\n  \"type\": \"widget-builder\",\n  \"props\": {\n    \"defaultValue\": \"$widget_definition\",\n    \"showEditor\": true\n  }\n}\n```\n\n## Example \u2014 inline definition\n\n```json\n{\n  \"type\": \"widget-builder\",\n  \"props\": {\n    \"defaultValue\": {\n      \"type\": \"metric\",\n      \"props\": { \"sql\": \"SELECT COUNT(*) FROM {{my_udf}}\", \"label\": \"Total rows\" }\n    },\n    \"showEditor\": false\n  }\n}\n```"
 }
 ~~~
