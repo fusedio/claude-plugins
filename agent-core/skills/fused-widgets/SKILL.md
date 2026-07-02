@@ -142,6 +142,14 @@ you) or a precomputed unified-diff string in `diff`; built for reviewing markdow
 spec changes. Lean on the built-in defaults — omit `style` unless you need a
 deliberate override (one consistent default look across every surface).
 
+> **Don't inline a large dataset into an `html` `value`** — keep large data outside
+> the widget, where the project stores its data, and load it at runtime. Concretely:
+> store the data as a file in `assets/`, add a backing UDF in `scripts/` that reads
+> it with `openfused.asset_path(...)`, and bind the widget to it via `{{udf_name}}`
+> in a `sql` prop. A widget config over **512 KB** is rejected at save and resolve
+> time (`ConfigTooLargeError`) — an inlined dataset also rides in every resolve
+> request, which the app server caps at 1 MB.
+
 > **`checkbox-group` is the multi-select reply channel** — the array twin of
 > `dropdown`. It is the input to reach for when an ask allows **more than one**
 > answer (an `ask_user` widget whose question allows more than one choice). It
