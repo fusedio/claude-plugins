@@ -2,7 +2,7 @@
 
 The `fused-marketplace` ships two Claude Code plugins:
 
-- **[`flow-skills`](flow-plugin/)** — the primary plugin. Skills for building with **OpenFused** end-to-end: project authoring, the `fused` CLI/MCP toolkit, widgets, and the `_core` management skills (task, run, secrets, agents, feedback).
+- **[`flow-skills`](flow-plugin/)** — the primary plugin. Usage/guide skills for building with **Fused** end-to-end: setup, infra, the `fused` CLI/MCP toolkit, project authoring, execution, verification, storage, and widgets.
 - **[`workbench`](workbench-plugin/)** — legacy skills for the Fused **workbench** SDK CLI (`fused workbench …`): canvas.toml, JSON-UI widgets, UDFs, and integrations.
 
 > **Heads up — CLI namespace change.** The original Fused repo was consolidated with OpenFused and now ships as a single `fused` package. The bare `fused` command is now the **OpenFused agent toolkit**; the legacy proprietary SDK CLI now lives under **`fused workbench`** (e.g. `fused canvas push` → `fused workbench canvas push`). The package and install command (`uv tool install 'fused[vector]'`) are unchanged.

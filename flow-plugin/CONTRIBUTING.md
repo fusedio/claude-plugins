@@ -19,10 +19,10 @@ there:
   dir) following [`utilities:writing-skills`](https://docs.claude.com/claude-code).
   Start from a copy of the repo skill if you like, give it a new `name`, and
   evolve it freely. Load it alongside this plugin.
-- **A new OpenFused project** — if you're adding domain UDFs or a custom
+- **A new Fused project** — if you're adding domain UDFs or a custom
   task/run/widget flow, create a project in your environment (see
-  `openfused-projects`) rather than editing the `_core` skills here. The `_core`
-  management skills are the shared substrate; your behavior belongs in your own
+  `fused-projects`) rather than baking team-specific behavior into a shipped
+  skill. The skills are the shared substrate; your behavior belongs in your own
   project on top of them.
 
 Rule of thumb: **if someone else loading this plugin would be surprised by your
@@ -52,18 +52,4 @@ them out of your private fork and send them here.
 | Doc fix, wrong/missing field, clarified caveat, additive new op | **PR back to this repo** |
 | Not sure | Treat it as meaning-changing → fork to your workspace, and open an issue to discuss upstreaming |
 
-## Skill invocation
-
-The `_core` management skills (`task-management`, `run-management`,
-`feedback-management`, `secrets-management`, `agents-management`) carry
-`disable-model-invocation: true` in their frontmatter — they are meant to be
-invoked **explicitly** (e.g. `/flow-skills:task-management`), not auto-triggered
-by the model. The `openfused-*` usage skills stay model-invokable.
-
-> **Known caveat:** as of the current Claude Code release, `disable-model-invocation`
-> is **silently ignored for plugin skills** (the loader hardcodes plugin skills to
-> `"on"`) — see [claude-code#22345](https://github.com/anthropics/claude-code/issues/22345),
-> open/unfixed. The frontmatter is kept as a declaration of intent: it takes effect
-> automatically once that bug is fixed, or if a skill is loaded as a user skill
-> (`~/.claude/skills/`). To suppress auto-invocation today, the only working
-> options are to load the skill from `~/.claude/skills/` or wait for the upstream fix.
+All skills in this plugin (`fused-*`) are model-invokable usage/guide skills.

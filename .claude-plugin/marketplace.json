@@ -10,7 +10,7 @@
     {
       "name": "flow-skills",
       "source": "./flow-plugin",
-      "description": "Skills for building with OpenFused: end-to-end project authoring, the fused CLI/MCP toolkit, widgets, and the _core management skills (task, run, secrets, agents, feedback).",
+      "description": "Skills for building with Fused: end-to-end project authoring, the fused CLI/MCP toolkit, widgets, execution, verification, and storage.",
       "version": "0.1.0",
       "author": {
         "name": "Fused",
