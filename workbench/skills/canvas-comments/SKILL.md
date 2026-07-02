@@ -9,7 +9,7 @@ Pinned comment threads on a Fused canvas serialize as top-level `[[comments]]` b
 
 ## Read: find the work
 
-1. Get the canvas locally: `fused canvas pull <name> -o <dir>` (or use the folder you have).
+1. Get the canvas locally: `fused workbench canvas pull <name> -o <dir>` (or use the folder you have).
 2. Every `[[comments]]` block where `status = "open"` is an actionable request.
 3. `anchor_udf = "<udfName>"` tells you WHICH node it's about — the fix belongs in `<udfName>.py` (or `.json`/`.md`/`.html` with that stem). No `anchor_udf` ⇒ canvas-level comment; read `content` for scope.
 
@@ -66,8 +66,8 @@ Never write a TOML `null`/empty value — omit absent fields entirely. Comments 
 ## Verify, then push
 
 ```bash
-fused canvas validate <dir>        # structure check
-fused canvas push <dir> --canvas <name>
+fused workbench canvas validate <dir>        # structure check
+fused workbench canvas push <dir> --canvas <name>
 ```
 
 ## Common mistakes

@@ -79,10 +79,10 @@ def get_data(bounds: fused.types.Bounds = None, year: int = 2020, limit: int = 1
     """Agent can call with just bounds if needed."""
 ```
 
-> **`fused.types.Bounds = None` means the UDF cannot run standalone.** When `bounds` defaults to `None`, the UDF expects a caller (map viewport, widget, or another UDF) to supply the bbox. If you want to run the UDF with `fused run` or call it without arguments, provide a concrete default bbox instead:
+> **`fused.types.Bounds = None` means the UDF cannot run standalone.** When `bounds` defaults to `None`, the UDF expects a caller (map viewport, widget, or another UDF) to supply the bbox. If you want to run the UDF with `fused workbench run` or call it without arguments, provide a concrete default bbox instead:
 >
 > ```python
-> # ✗ Cannot run standalone — fused run will fail with no bounds
+> # ✗ Cannot run standalone — fused workbench run will fail with no bounds
 > def udf(bounds: fused.types.Bounds = None): ...
 >
 > # ✓ Runs standalone with the default; still overridable by map viewport
@@ -387,34 +387,34 @@ If dynamic file names are required, resolve and validate the full path before us
 
 ```bash
 # Basic run
-fused run CANVAS_NAME udf_name
+fused workbench run CANVAS_NAME udf_name
 
 # With a parameter
-fused run CANVAS_NAME udf_name --param=value
+fused workbench run CANVAS_NAME udf_name --param=value
 
 # Force fresh execution (skip cache)
-fused run CANVAS_NAME udf_name --cache-max-age=0
+fused workbench run CANVAS_NAME udf_name --cache-max-age=0
 
 # Profile performance
-fused run CANVAS_NAME udf_name --profile
+fused workbench run CANVAS_NAME udf_name --profile
 ```
 
 **What counts as passing:** any non-error return. An empty `{}` or `None` is fine if the data source isn't populated yet — what matters is no exception. If the UDF has a `date` or `id` parameter, test with a real value that should have data.
 
 **Start with a smoke test.** When writing a new UDF — especially one that connects to an external service — verify the connection returns data before building the full logic. This separates "can I connect?" from "does my logic work?", and makes failures much easier to diagnose.
 
-- `fused json-ui validate <file>` - Validate widget configs before pushing
+- `fused workbench json-ui validate <file>` - Validate widget configs before pushing
 
-> **`fused run` always executes the deployed remote version, not your local files.** If you edit a UDF and immediately run `fused run canvas_name udf_name`, you will get the previously deployed version — the CLI prints `"UDF '...' returned cached result"` which can make this easy to miss. Always push first:
+> **`fused workbench run` always executes the deployed remote version, not your local files.** If you edit a UDF and immediately run `fused workbench run canvas_name udf_name`, you will get the previously deployed version — the CLI prints `"UDF '...' returned cached result"` which can make this easy to miss. Always push first:
 >
 > ```bash
 > # Edit → push → run (correct order)
-> fused canvas push ./my_canvas --canvas my_canvas
-> fused run my_canvas my_udf --param=value
+> fused workbench canvas push ./my_canvas --canvas my_canvas
+> fused workbench run my_canvas my_udf --param=value
 > ```
 >
 > Alternatively, pass the local `.py` file directly to run without pushing — but note that `fused.secrets` and `fused.api` integrations are only available in the remote runtime:
 >
 > ```bash
-> fused run my_canvas ./my_canvas/my_udf.py --param=value
+> fused workbench run my_canvas ./my_canvas/my_udf.py --param=value
 > ```

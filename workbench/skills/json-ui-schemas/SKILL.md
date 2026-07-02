@@ -165,22 +165,22 @@ Always set `maxRows` explicitly on `sql-runner` when the source UDF may return m
 1. Open `reference.md` and find the section for the widget `type` you're working with.
 2. Honor `required` props and respect `enum` constraints.
 3. When constructing a widget JSON, prefer SQL-driven options/data over static when a UDF is available.
-4. Validate with `fused json-ui validate <file>` — unknown keys and missing required props will be flagged.
+4. Validate with `fused workbench json-ui validate <file>` — unknown keys and missing required props will be flagged.
 
 ## Debugging widgets with the Fused CLI
 
-The `fused json-ui` subcommands are the fastest way to check your work without round-tripping through the canvas UI. See the `fused:fused-cli` skill for full flag details; the common debugging flow is:
+The `fused workbench json-ui` subcommands are the fastest way to check your work without round-tripping through the canvas UI. See the `fused:fused-cli` skill for full flag details; the common debugging flow is:
 
-- **Verify the schema you're targeting** — `fused json-ui schemas <type>` prints the live JSON Schema for one or more component types (or all of them if omitted). Use this when `reference.md` and the CLI disagree; the CLI is authoritative.
-- **Validate a widget JSON before pushing** — `fused json-ui validate path/to/widget_foo.json` (or a path to a `.json5` file, or an inline JSON5 string). Run this after every non-trivial edit; it catches missing required props, unknown keys, and bad enum values without needing a canvas push.
-- **See a widget rendered without opening a browser tab** — once the canvas is shared (`fused canvas share <ref>`), use `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` to render the widget headlessly and save a PNG. Add `--wait N` if the widget loads data asynchronously. `run-inline-widget` does the same for an inline JSON5 config string, which is useful for iterating on a widget that isn't committed yet.
-- **Refresh the catalog** — `fused json-ui catalog-prompt` prints the high-level component catalog; handy when a new widget type appears in the CLI before it lands in `reference.md`.
+- **Verify the schema you're targeting** — `fused workbench json-ui schemas <type>` prints the live JSON Schema for one or more component types (or all of them if omitted). Use this when `reference.md` and the CLI disagree; the CLI is authoritative.
+- **Validate a widget JSON before pushing** — `fused workbench json-ui validate path/to/widget_foo.json` (or a path to a `.json5` file, or an inline JSON5 string). Run this after every non-trivial edit; it catches missing required props, unknown keys, and bad enum values without needing a canvas push.
+- **See a widget rendered without opening a browser tab** — once the canvas is shared (`fused workbench canvas share <ref>`), use `fused workbench json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` to render the widget headlessly and save a PNG. Add `--wait N` if the widget loads data asynchronously. `run-inline-widget` does the same for an inline JSON5 config string, which is useful for iterating on a widget that isn't committed yet.
+- **Refresh the catalog** — `fused workbench json-ui catalog-prompt` prints the high-level component catalog; handy when a new widget type appears in the CLI before it lands in `reference.md`.
 
-Recommended loop when authoring a new widget JSON: write → `fused json-ui validate <file>` → fix → push → confirm it renders.
+Recommended loop when authoring a new widget JSON: write → `fused workbench json-ui validate <file>` → fix → push → confirm it renders.
 
 **Always verify the widget renders correctly** before reporting the task complete. Use one of these methods:
 
-- **CLI (preferred for quick iteration):** `fused json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` — renders headlessly and saves a PNG. Review the PNG to confirm layout, labels, and data look correct.
+- **CLI (preferred for quick iteration):** `fused workbench json-ui run-shared-widget <share-token> <widget-name> --screenshot-filename out.png` — renders headlessly and saves a PNG. Review the PNG to confirm layout, labels, and data look correct.
 - **Browser:** open the canvas URL and interact with the widget directly. This is required when testing interactivity (dropdowns, form submission, map panning, etc.) that a screenshot cannot capture.
 
 Do not claim success after `validate` alone — validation only checks schema conformance, not runtime behavior or visual correctness.

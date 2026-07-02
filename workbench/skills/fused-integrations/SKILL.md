@@ -5,7 +5,7 @@ description: Reference for using Fused's built-in integration connections inside
 
 # Fused Integrations
 
-Once an integration is configured (via the Workbench → Integrations UI or `fused integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
+Once an integration is configured (via the Workbench → Integrations UI or `fused workbench integrations <provider> connect`), use the helpers below inside any UDF. You do **not** need to manage credentials manually — connections and secrets are resolved by the runtime.
 
 Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notion`, `gdrive`, `modal`, `huggingface`, `baseten`, `daytona`, `comfy`, `anthropic`, `openai`, `slack` (experimental).
 
@@ -13,7 +13,7 @@ Available integrations: `snowflake`, `bigquery`, `gcs`, `s3`, `airtable`, `notio
 
 ## Testing integration UDFs
 
-Integration UDFs have two failure modes general UDFs don't: missing access grants and execution-context differences between `fused run` and public shared URLs. See the `fused-udfs` skill for general testing guidance — the integration-specific additions are below.
+Integration UDFs have two failure modes general UDFs don't: missing access grants and execution-context differences between `fused workbench run` and public shared URLs. See the `fused-udfs` skill for general testing guidance — the integration-specific additions are below.
 
 **Start with a connectivity smoke test.** Before building any logic, verify the integration actually connects and returns data:
 
@@ -531,7 +531,7 @@ To write the code block from a pipeline (e.g. a Claude agent), use `notion-updat
 
 ### ⚠ notion_connect() fails in shared URL execution environment
 
-`fused.api.notion_connect()` works correctly when running via `fused run` (local or remote authenticated execution), but **can fail with HTTP 422** when the UDF is called via a public shared URL endpoint (e.g. `https://udf.ai/fc_TOKEN/udf_name`). The Notion OAuth token is not available in that unauthenticated execution context.
+`fused.api.notion_connect()` works correctly when running via `fused workbench run` (local or remote authenticated execution), but **can fail with HTTP 422** when the UDF is called via a public shared URL endpoint (e.g. `https://udf.ai/fc_TOKEN/udf_name`). The Notion OAuth token is not available in that unauthenticated execution context.
 
 **Fix:** wrap in try/except and fall back to an alternative data source (e.g. Fused file storage):
 
@@ -1090,7 +1090,7 @@ There is no `fused.api.slack_connect()` and no `SLACK_*` secret in UDFs — wiri
 
 ## Secrets (generic key/value)
 
-Any secret stored via `fused secrets set KEY VALUE` (or the Workbench UI) is available as `fused.secrets["KEY"]` inside any UDF. Use this for API keys, tokens, or JSON credential blobs that don't have a first-class connect helper.
+Any secret stored via `fused workbench secrets set KEY VALUE` (or the Workbench UI) is available as `fused.secrets["KEY"]` inside any UDF. Use this for API keys, tokens, or JSON credential blobs that don't have a first-class connect helper.
 
 ```python
 @fused.udf
@@ -1098,4 +1098,4 @@ def udf():
     api_key = fused.secrets["my_api_key"]
 ```
 
-> **`fused.secrets` raises on missing keys.** Accessing a key that doesn't exist raises `SecretKeyNotFound`, not `KeyError` and not `None`. Run `fused secrets list` to verify a key exists before relying on it in a UDF.
+> **`fused.secrets` raises on missing keys.** Accessing a key that doesn't exist raises `SecretKeyNotFound`, not `KeyError` and not `None`. Run `fused workbench secrets list` to verify a key exists before relying on it in a UDF.

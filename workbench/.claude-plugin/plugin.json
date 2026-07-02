@@ -1,7 +1,7 @@
 {
-  "name": "fused",
+  "name": "workbench",
   "version": "0.1.3",
-  "description": "Skills for authoring Fused canvases: canvas.toml format, JSON UI widget schemas, and the fused CLI.",
+  "description": "Skills for the legacy Fused workbench SDK CLI (`fused workbench …`): canvas.toml format, JSON UI widget schemas, UDFs, integrations, and the workbench CLI.",
   "author": {
     "name": "Fused",
     "email": "info@fused.io",
