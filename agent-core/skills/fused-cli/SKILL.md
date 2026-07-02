@@ -1221,14 +1221,30 @@ fused widget parley                     # print/open the parley page URL
 fused widget agent                      # action comments the human pins on the page (needs `claude` on PATH)
 ```
 
-**Agent workflow**: run `widget watch` as a **background process** for the life of the collaboration, then `widget push` once per view — react to what streams in, push the next view, repeat. The open tab re-renders in place on every push (params reset to the new config's defaults).
+**Agent workflow**: consume `widget watch` with a **`Monitor`** (`persistent: true`), **not** a plain `run_in_background` task — `watch` streams forever, so a background task only pings you when it *exits* (it never does) and you sit blind while the human acts; a Monitor wakes you on each NDJSON line. Arm it **before** the first `push`, then `widget push` once per view — react to what streams in, push the next view, repeat. The open tab re-renders in place on every push (params reset to the new config's defaults). Same pattern as `fused-feedback` → *React live with a Monitor*:
+
+```
+Monitor(description: "parley human events", persistent: true,
+        command: "fused widget watch --from latest")
+```
+
+For the **comment** revise loop specifically, filter the stream so you only wake on actionable comments and don't re-trigger on your own resolves (a `widget comment resolve` echoes back as a `resolved` line):
+
+```
+Monitor(persistent: true, description: "new open parley comments",
+        command: "fused widget watch | grep --line-buffered '\"status\": \"open\"'")
+```
+
+(The `Monitor` mention under `widget open` above is a different job — polling **stderr** for the `open` URL, not consuming this event stream.)
 
 By default `watch` emits only **`action`** and **`close`** events — the low-volume signals you act on. The page also reports a debounced `params` event on every input change (a note typed, a slider dragged); those are suppressed unless you pass `--verbose`. A terminal `action` always carries the full `params` snapshot, so you get state on every decision without the keystroke noise. Reach for `--verbose` only when you want to react *while* the human explores (e.g. drill-down) rather than on their submit.
 
 | Command | Key options | stdout | Exit |
 |---|---|---|---|
 | `widget push TARGET` | `-c/--config` (inline; `-` = stdin), `--source PATH` (with `--config`: the file the config came from → the edit anchor), `--project`, `--project-dir PATH` (`.json`/`--config` only; keeps the view file-backed → editable), `--title`, `--open/--no-open` (default `--open`: opens the parley page only when no tab is watching — `viewers == 0`) | exactly one line `{"rev":N,"viewers":M}` | `0`; failures: stderr only, `1` |
-| `widget watch` | `--dir .`, `--from latest\|all\|<seq>` (default `latest`), `--timeout 0` (= forever), `--verbose` (also emit `params`; default off) | NDJSON per event: `{"event":"action"\|"close"\|"params","seq":N,"rev":R[,"action"][,"terminal"],"params":{…}}`; final `{"event":"end","reason":"interrupted"\|"timeout"}` | Ctrl-C `130`, timeout `3`, server lost `1` (no end line) |
+| `widget watch` | `--dir .`, `--from latest\|all\|<seq>` (default `latest`), `--timeout 0` (= forever), `--verbose` (also emit `params`; default off) | NDJSON per event: `{"event":"action"\|"close"\|"params"\|"comment","seq":N,"rev":R[,"action"][,"terminal"],"params":{…}}`; final `{"event":"end","reason":"interrupted"\|"timeout"}` | Ctrl-C `130`, timeout `3`, server lost `1` (no end line) |
+
+> **`{"event":"comment",…}` and the `widget comment ack\|resolve` subgroup land with [PR #310](https://github.com/fusedio/fused/pull/310)** (open at time of writing). Once merged, `comment` is a **first-class** watch event (each open comment the human pins delivers as its own line — no longer only reconstructable from the `__comments` `params` payload). When driving the comment loop, filter to open comments (`grep '"status": "open"'`) so your own `widget comment resolve` echoes (which report as `resolved`) don't self-trigger the Monitor. Ground truth for the behaviour: openfused repo `spec/feedback/local.md`.
 | `widget parley` | `--dir .`, `--no-open` | none (URL on stderr) | `0` |
 | `widget agent` | `--port`, `--model <m>` | logs on stderr; foreground until Ctrl-C | `0` |
 
