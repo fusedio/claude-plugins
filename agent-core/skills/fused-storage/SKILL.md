@@ -1,6 +1,6 @@
 ---
 name: fused-storage
-description: The fused storage and secrets MCP tools — inspecting cloud-native datasets and managing secrets. Use when finding/listing/counting S3 objects, reading a Parquet/Arrow/CSV schema, minting a download URL, uploading content, or storing/reading/deleting secrets, via mcp__openfused__{list_files,count_files,get_file,get_file_schema,upload_file,get_secret,put_secret,list_secrets,delete_secret}. For running code over the data see fused-execute; for the equivalent CLI commands see fused-cli.
+description: The fused storage and secrets MCP tools — inspecting cloud-native datasets and managing secrets. Use when finding/listing/counting S3 objects, reading a Parquet/Arrow/CSV schema, minting a download URL, uploading content, or storing/reading/deleting secrets, via mcp__openfused__{list_files,count_files,get_file,get_file_schema,upload_file,get_secret,put_secret,list_secrets,delete_secret}. For running code over the data see fused-execute; for the equivalent CLI commands see fused-cli. If this is a step in building or running a project, load `fused-projects` first for the end-to-end model.
 ---
 
 # Storage & secrets in fused

@@ -1,16 +1,20 @@
 ---
 name: fused-feedback
-description: Show the human a real browser UI — to ask a question, get an approval/decision, or review a plan — built from Fused's JSON-UI primitives and opened with `fused widget open` (one-shot — inline `--config` or a `.json` file) or the parley (`widget push`/`widget watch`, standing). Use in Claude Code whenever a structured choice, form, approval, or plan review would be clearer than plain terminal text, and you want the human's answer back as JSON.
+description: Show the human a real browser UI — to ask a question, get an approval/decision, or review a plan — built from Fused's JSON-UI primitives and opened with `fused widget open` (one-shot — inline `--config` or a `.json` file) or the parley (`widget push`/`widget watch`, standing). Use in Claude Code whenever a structured choice, form, approval, or plan review would be clearer than plain terminal text, and you want the human's answer back as JSON. If the task touches an existing project, UDF, or data-bound widget (anything with `{{ref}}`/`sql`), also load `fused-projects` and `fused-widgets` first.
 ---
 
 # Fused feedback — ask the human through a visual UI
 
-> **Part of the Fused skill set — don't work from it alone.** Fused is `workspace ⊃
-> project ⊃ UDF`. The moment a task touches a **project, UDF, or data-bound widget**
-> (anything with `{{ref}}`/`sql`, e.g. opening an existing project's widget), load
-> **`fused-projects`** (end-to-end model + how projects/widgets are addressed) and
-> **`fused-widgets`** (how `{{ref}}` resolution runs) *before acting*. See
-> **`fused-guide`** for the full set. This skill assumes that context.
+> **⛔ STOP — load companion skills before your first tool call.** Fused is
+> `workspace ⊃ project ⊃ UDF`. If the task touches a **project, UDF, or data-bound
+> widget** (anything with `{{ref}}`/`sql` — e.g. opening an existing project's
+> widget), you MUST load **`fused-projects`** (end-to-end model + how
+> projects/widgets are addressed) and **`fused-widgets`** (component catalog +
+> `{{ref}}` resolution) **before running any command or editing any file**. Do not
+> reverse-engineer project paths or widget props ad hoc — that context is in those
+> skills (e.g. the exact `sql-table` prop set). Only a pure static ask (a plain
+> `widget open` with no project/`{{ref}}`) is safe to do from this skill alone. See
+> **`fused-guide`** for the full set.
 
 Instead of asking the human a question as terminal text, render a **real browser
 UI** and get a **structured answer back as JSON**. You author a small JSON-UI
@@ -369,6 +373,36 @@ widget. The agent reads `status.projectDir` and **echoes it on every re-push**, 
 refs). The `widget agent` verb is separate from `widget watch`/manual planning —
 reach for `agent` when you want comments actioned automatically; drive the parley
 by hand (§ above) when you're authoring successive views yourself.
+
+### Driving comments yourself with `widget watch` (no `widget agent`)
+
+When the human wants **you** — this session — to handle their comments (so edits
+carry the full conversation context) rather than `widget agent` spawning fresh
+`claude -p` workers, run `widget watch` instead of `widget agent` and be the single
+writer yourself. This is a supported mode, but the "never manually push while a
+session is live" caution above still bites — mind the ordering:
+
+1. **Do not run `widget agent` at all** for this widget. If one is already running,
+   `TaskStop` it first — otherwise two writers race on the file and the live state.
+2. **Arm a persistent Monitor on `watch`** so events reach you live:
+   `Monitor(command: "fused widget watch --port 4477 --from latest", persistent: true)`.
+   Use `--from latest` for *new* events; snapshot the current backlog once with a
+   brief `--from all` capture (the `sleep 4; kill` recipe above) if you need history.
+3. **On each comment event**: edit the backing `.json`, run `fused widget verify
+   … --project-dir …` (confirm `warnings: []`), then `fused widget push … --project-dir …`
+   to update the view. Because *you* are now the sole writer, your push is the
+   merge — it will not clobber another writer's un-persisted comments (there is no
+   `widget agent` holding live state). Preserve the `props.comments`/`__comments`
+   array when you edit so pins survive the round-trip, and set each actioned
+   comment's `status` to `resolved`.
+4. **If a comment never arrives**, the Monitor missed it (or `--from latest` started
+   after the pin) — do a one-shot `--from all` capture to reconcile, then re-push. Do
+   **not** assume the live view matches the file; trust the `watch` stream for "what
+   is the human asking," `widget verify` for "what renders."
+
+The divergence risk in this mode comes from an **earlier stray `widget agent` or a
+push that reset `rev`** while comments were live — start clean (no agent, one
+writer) and it stays consistent.
 
 ## Recipes
 

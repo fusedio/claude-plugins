@@ -1,6 +1,6 @@
 ---
 name: fused-execute
-description: Best practices for running code through fused's execute_code tool. Use when writing or reviewing any mcp__openfused__execute_code call — covers how to structure user code, choose a data library, handle results, and write outputs to the file store. For security scanning, spec checks, and testing see fused-verify.
+description: Best practices for running code through fused's execute_code tool. Use when writing or reviewing any mcp__openfused__execute_code call — covers how to structure user code, choose a data library, handle results, and write outputs to the file store. For security scanning, spec checks, and testing see fused-verify. If this is part of building or running a project, load `fused-projects` first for the end-to-end model (and `fused-widgets` if the result is a rendered UI).
 ---
 
 # Running code via fused

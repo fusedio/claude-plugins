@@ -1,6 +1,6 @@
 ---
 name: fused-cli
-description: Reference for the fused CLI — environment management, file storage, secrets, code execution, and infrastructure commands. Use when writing or explaining shell commands that invoke `fused`, or when helping users set up, switch between, or provision environments.
+description: Reference for the fused CLI — environment management, file storage, secrets, code execution, and infrastructure commands. Use when writing or explaining shell commands that invoke `fused`, or when helping users set up, switch between, or provision environments. If the commands are part of building or running a project, load `fused-projects` first for the end-to-end model.
 ---
 
 # fused CLI reference

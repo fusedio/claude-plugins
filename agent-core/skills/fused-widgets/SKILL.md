@@ -107,7 +107,7 @@ Display / data:
 | `markdown` | `value` / `sql` — GitHub-flavored prose (headings/lists/tables/code) |
 | `diff` | `before` + `after` (computed) OR `diff` (unified string), `oldLabel`, `newLabel` |
 | `metric` | `value` / `sql`, `label`, `format`, `prefix`, `suffix`, `decimals` |
-| `sql-table` | `sql`, `title`, `sortable`, `filterable`, `maxRows` |
+| `sql-table` | `sql`, `title`, `sortable`, `filterable`, `maxRows`; tree-view pair `idColumn` + `parentColumn` (rows nest by parent id). No `hiddenColumns`/`columnVisibility` — select only the columns you want in the `sql`. |
 | `image` / `video` | `src` (+ `alt`/`poster`/`controls`…) |
 | `html` | `value` (raw HTML — escape hatch; prefer `markdown`) |
 | `iframe` | `src` (absolute http(s)), `title`, `allow` |

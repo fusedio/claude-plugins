@@ -1,6 +1,6 @@
 ---
 name: fused-verify
-description: Security scanning, testing, and correctness validation for code running in openfused. Use when writing or reviewing verify_code, test_code, get_audit_log calls, or when advising on security policy, spec checks, data expectations, or code quality in the fused context.
+description: Security scanning, testing, and correctness validation for code running in openfused. Use when writing or reviewing verify_code, test_code, get_audit_log calls, or when advising on security policy, spec checks, data expectations, or code quality in the fused context. If you're validating code that belongs to a project, load `fused-projects` first for the end-to-end flow.
 ---
 
 # Security, testing, and validation in fused
