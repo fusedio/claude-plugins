@@ -299,7 +299,39 @@ reacts to the parley's **live** SSE stream ("the instant a comment appears"); it
 does **not** replay comments pinned while it wasn't running. So the sequence is
 `push` the view → start `widget agent` → *then* tell the human to comment. A
 comment dropped before the agent is up is not actioned — nudge the human to re-pin
-it (or restart the loop) rather than waiting.
+it (or restart the loop) rather than waiting. A pre-existing comment also stays
+**`open` forever** in the live parley (it never gets picked up), which looks like a
+bug but isn't — re-pin it after the agent is up.
+
+**Never manually `push` while a comment session is live — you will destroy the
+human's comments.** The pushed file and the live parley comment state are
+**separate**, and parley state lives in the widget-host's memory only — it is *not*
+persisted to disk or to the replayable event log, and there is **no snapshot/recovery
+endpoint** (every `/api/parley/{comments,params,snapshot,history}` route 404s). Once a
+comment session is live, `widget agent` is the **only** thing that should re-push:
+it merges edits into the live state. A manual `fused widget push` of the on-disk
+`.json` overwrites the in-memory comments that haven't been persisted yet — they are
+**gone, unrecoverable**. If the agent got stopped and comments look stuck, **restart
+`widget agent`** (it re-attaches as the single writer) — do **not** re-push the file
+to "refresh" it. If you must edit the file by hand, stop the human from commenting
+first and expect to lose any un-actioned live comments.
+
+**Reading current comments — never plain-curl the events endpoint.**
+`GET /api/parley/events` is an **infinite SSE stream**; a bare `curl` against it hangs
+until it times out (exit 143). To inspect the current comment state on demand, capture
+the stream briefly with `watch` instead:
+
+```bash
+# snapshot all comment/param events, then stop — don't leave it streaming
+fused widget watch --from all --port 4477 > /tmp/parley.jsonl 2>/dev/null &
+WPID=$!; sleep 4; kill $WPID 2>/dev/null
+# each line is one event; the open comments are the cmt-* entries without a resolve
+```
+
+Note the file on disk and the live parley can **diverge** — a comment marked resolved
+in the `.json` may still show `open` in the live view (and vice-versa). Trust the live
+stream for "what is the human asking now," and `widget verify` for "what does the
+widget currently render."
 
 **Lifecycle — it's a foreground long-runner, not a one-shot.** Unlike `widget
 open` (blocks, prints one JSON line, exits) or `widget verify` (one-shot data
@@ -402,3 +434,8 @@ config. Check in this order:
   the start — see [Make it appear instantly](#make-it-fast).
 - **Unknown `type` is a hard error** — only use components from the catalog
   ([references/components.md](references/components.md)).
+- **Parley comments live in memory only** — no disk/event-log persistence, no recovery
+  endpoint. A manual `push` over a live comment session **destroys** un-actioned
+  comments; let `widget agent` be the sole re-pusher.
+- **`/api/parley/events` is an infinite SSE stream** — a bare `curl` hangs (exit 143);
+  snapshot with `fused widget watch --from all` instead.
