@@ -33,6 +33,7 @@ The manifest at [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) point
 | [`fused-verify`](skills/fused-verify/) | Security scanning, testing, and correctness validation (`verify_code`, `test_code`, audit log, spec checks). |
 | [`fused-storage`](skills/fused-storage/) | Storage + secrets MCP tools — inspect cloud-native datasets and manage secrets. |
 | [`fused-widgets`](skills/fused-widgets/) | Author and preview JSON-UI widgets as a project's response — the compute→visualize pattern and the surfaces that render them. |
+| [`fused-html-artifacts`](skills/fused-html-artifacts/) | Author standalone `scripts/<name>/main.html` documents that Fused/Flow serve and wire to a `window.fused` runtime (callUdf / runSql / params) — the bespoke-page alternative to a JSON-UI widget. |
 | [`fused-feedback`](skills/fused-feedback/) | Show the human a real browser UI for questions, approvals, and plan reviews via `fused widget open` / parley. |
 
 > The Fused App state store (tasks, runs, feedback, secrets, agent roster) is exposed at runtime as built-in `_core` workspace UDFs. This plugin ships the CLI/usage guides only; those `_core` UDFs are documented inline in [`fused-widgets`](skills/fused-widgets/) and [`fused-cli`](skills/fused-cli/) where you reference them.
