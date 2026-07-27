@@ -306,7 +306,7 @@ Store the secret first (name must be prefixed with the environment's function
 prefix, e.g. `openfused-`, so the Lambda execution role can read it):
 
 ```sh
-fused secrets put openfused-my-password "s3cr3t"
+fused secrets put openfused-my-password    # prompts for the value; keeps it out of argv
 ```
 
 Then read it inside the code:
