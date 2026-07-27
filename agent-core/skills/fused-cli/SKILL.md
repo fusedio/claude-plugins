@@ -161,7 +161,8 @@ Instead of hand-building the env above, the `fused cloud` group runs the control
 
 ```bash
 fused cloud login [--no-browser]            # Auth0 PKCE; caches a control-plane JWT
-fused cloud redeem CODE [--tier prod]       # redeem a beta invite: admit + create your org + env
+fused cloud redeem [CODE] [--tier prod]     # redeem a beta invite: admit + create your org + env
+                                            #   omit CODE and it prompts (keeps it out of shell history)
 fused cloud orgs [--tier prod]              # list your orgs + envs and their provision_state
 fused cloud setup [--tier prod] \           # the one-shot guided flow:
   [--beta-code CODE] \                          #   (optional) redeem a beta invite first, then
@@ -179,7 +180,7 @@ Token resolution at request time (first hit wins): **`FUSED_API_KEY`** env var (
 
 Tune a managed env after creation with `env update <name>` — the managed-fused fields `--tier`, `--mcp-base-url`, `--fused-org`, `--fused-env-id`, and `--api-key-secret` are accepted (mirroring `env create --backend fused`). `infra` commands are not applicable (Fused operates the runtime) and report that posture.
 
-If you have a **beta invite code**, redeem it during the beta gate either as a standalone step (`fused cloud redeem CODE`, after `login`) or folded into setup (`fused cloud setup --beta-code CODE`). Redeeming admits your account and creates a personal org with a `default` environment, which setup then waits on and wires up. The code is single-use; an invalid or already-redeemed code raises a clear error.
+If you have a **beta invite code**, redeem it during the beta gate either as a standalone step (`fused cloud redeem`, after `login`) or folded into setup (`fused cloud setup --beta-code CODE`). Redeeming admits your account and creates a personal org with a `default` environment, which setup then waits on and wires up. The code is single-use; an invalid or already-redeemed code raises a clear error. Prefer the standalone form with the code omitted — it prompts without echo, so the code stays out of `ps` and your shell history; the same applies to `fused cloud accept [TOKEN]`, the sibling command for joining an org you were invited to.
 
 ### Verify / security options (all backends)
 
@@ -663,7 +664,7 @@ Events are read from the local SQLite audit store (`~/.openfused/audit.db`) — 
 ## Secrets (`secrets`)
 
 ```sh
-fused secrets put db-password "s3cr3t"       # create or update
+fused secrets put db-password                # create or update (prompts for the value)
 fused secrets get db-password                # print value
 fused secrets list                           # all secrets
 fused secrets list --prefix db-             # filter by prefix
@@ -676,11 +677,25 @@ window, not force-deleted; on the local backend the name is removed from the
 OS keychain map immediately. The MCP equivalent (`delete_secret`) requires the
 server to run with `--enable-destructive`.
 
+**Keep the value off the command line.** `put` takes the value from a no-echo
+prompt when you omit it, so the secret never lands in argv — where any other
+user on the host can read it (`ps`, `/proc/<pid>/cmdline`) — or in your shell
+history. For scripts and CI, pipe it or point at a file:
+
+```sh
+printf %s "$DB_PASSWORD" | fused secrets put db-password   # piped stdin
+fused secrets put db-password --value-file ./db-password   # from a file ('-' = stdin)
+fused secrets put db-password "s3cr3t"                     # inline: works, but exposed
+```
+
+One trailing newline is stripped from piped/file input, and an empty read is an
+error rather than an empty secret.
+
 **Naming requirement for Lambda access**: the Lambda execution role can only read secrets whose name starts with the environment's function prefix (e.g. `openfused-`). Always prefix secret names with the function prefix when they need to be read from `execute_code`:
 
 ```sh
-fused secrets put openfused-db-password "s3cr3t"   # readable from Lambda
-fused secrets put db-password "s3cr3t"             # NOT readable from Lambda
+fused secrets put openfused-db-password   # readable from Lambda
+fused secrets put db-password             # NOT readable from Lambda
 ```
 
 Never pass secret values through `code run` inline code strings — retrieve them inside the execution using `openfused.get_secret("openfused-...")` (works on AWS and the local backend).
@@ -754,7 +769,8 @@ fused code verify -c "import subprocess; result = 1"
 fused code verify myanalysis.py --input-file data.csv
 
 # Spec check — Claude reviews whether code matches description (requires an Anthropic
-# API key: ANTHROPIC_API_KEY env var, or `fused secrets put anthropic-api-key ...`)
+# API key: ANTHROPIC_API_KEY env var, or `fused secrets put anthropic-api-key`, which
+# prompts for the key)
 fused code verify myanalysis.py --spec "compute the mean of column A"
 
 # Scan using a workspace project's deps

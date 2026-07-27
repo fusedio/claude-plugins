@@ -103,7 +103,7 @@ When to use spec checks:
 - High-stakes transformations where incorrect code would silently produce wrong results
 - Any time you want a second opinion before running expensive or destructive code
 
-Requires an Anthropic API key, resolved in order: `ANTHROPIC_API_KEY` (or `ANTHROPIC_AUTH_TOKEN`) in the server environment, then the `anthropic-api-key` secret in the resolved environment's secrets backend — store it once with `put_secret("anthropic-api-key", "sk-ant-...")` (or `fused secrets put anthropic-api-key sk-ant-...`) and no server env var is needed. On AWS environments the secret name must carry the env's function prefix (the standard `put_secret` naming rule), e.g. `openfused-anthropic-api-key`. If no key is found, a `spec/review-error` warning is emitted and execution proceeds.
+Requires an Anthropic API key, resolved in order: `ANTHROPIC_API_KEY` (or `ANTHROPIC_AUTH_TOKEN`) in the server environment, then the `anthropic-api-key` secret in the resolved environment's secrets backend — store it once with `put_secret("anthropic-api-key", "sk-ant-...")` (or `fused secrets put anthropic-api-key`, which prompts for the key rather than taking it on the command line) and no server env var is needed. On AWS environments the secret name must carry the env's function prefix (the standard `put_secret` naming rule), e.g. `openfused-anthropic-api-key`. If no key is found, a `spec/review-error` warning is emitted and execution proceeds.
 
 ### Per-UDF specs (`spec.md`)
 
